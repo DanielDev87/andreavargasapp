@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+/* Manual dark mode: toggled via a `dark` class on <html>, see partials/theme-init */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Instrument Sans", -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+  --font-serif: "Playfair Display", ui-serif, Georgia, Cambria, Times New Roman, serif;
+
+  /* Gold — the clinic's signature accent */
+  --color-gold-50: #fdf8ec;
+  --color-gold-100: #f9edc9;
+  --color-gold-200: #f2db98;
+  --color-gold-300: #e9c467;
+  --color-gold-400: #ddab45;
+  --color-gold-500: #cf9a2e;
+  --color-gold-600: #b07f21;
+  --color-gold-700: #8a611c;
+  --color-gold-800: #5f4315;
+  --color-gold-900: #382a10;
+
+  /* Ink — the near-black neutral that anchors the palette */
+  --color-ink-50: #f6f5f4;
+  --color-ink-100: #e8e6e3;
+  --color-ink-200: #cbc7c1;
+  --color-ink-300: #a39d94;
+  --color-ink-400: #736b61;
+  --color-ink-500: #4c453e;
+  --color-ink-600: #362f29;
+  --color-ink-700: #26211d;
+  --color-ink-800: #191512;
+  --color-ink-900: #0f0c0a;
+  --color-ink-950: #080605;
+
+  --spacing-72: 18rem;
+  --spacing-84: 21rem;
+  --spacing-96: 24rem;
+  --opacity-0: 0;
+  --opacity-10: 0.1;
+  --opacity-20: 0.2;
+  --opacity-30: 0.3;
+  --opacity-40: 0.4;
+  --opacity-50: 0.5;
+  --opacity-60: 0.6;
+  --opacity-70: 0.7;
+  --opacity-80: 0.8;
+  --opacity-90: 0.9;
+  --opacity-100: 1;
+}
+
+@layer utilities {
+  /* Shimmering gold gradient text, for headlines and prices */
+  .text-shine {
+    background-image: linear-gradient(110deg, var(--color-gold-600) 20%, var(--color-gold-200) 40%, var(--color-gold-400) 60%, var(--color-gold-600) 80%);
+    background-size: 220% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shine-sweep 6s linear infinite;
+  }
+
+  /* Diagonal light sweep on hover, for buttons and cards */
+  .shine-sweep {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .shine-sweep::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.45) 50%, transparent 70%);
+    transform: translateX(-120%);
+    transition: transform 0.7s ease;
+    pointer-events: none;
+  }
+  .shine-sweep:hover::after {
+    transform: translateX(120%);
+  }
+
+  .shadow-gold {
+    box-shadow: 0 10px 30px -10px rgba(207, 154, 46, 0.45);
+  }
+
+  .ring-gold {
+    box-shadow: 0 0 0 1px rgba(207, 154, 46, 0.35);
+  }
+}
+
+@keyframes shine-sweep {
+  0% {
+    background-position: -120% 0;
+  }
+  100% {
+    background-position: 220% 0;
+  }
+}
