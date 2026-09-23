@@ -1,0 +1,10 @@
+# Fallback for shared/cPanel hosting without Supervisor access: processes whatever's
+# queued every minute instead of keeping a permanent worker process alive. Each run
+# already picks up the latest deployed code, so there's no "stale worker" problem like
+# there would be with a long-lived process — no need to coordinate with queue:restart.
+#
+# Setup in cPanel → Avanzado → Cron Jobs → Add New Cron Job:
+#   - Minute: */1, all other fields: *  (every minute)
+#   - Command: the line below, with the path adjusted to where the app actually lives.
+
+* * * * * cd /home/usuario/artsmile-app && php artisan queue:work --stop-when-empty --tries=3 >> /dev/null 2>&1

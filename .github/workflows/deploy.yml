@@ -1,0 +1,88 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, dom, fileinfo, gd, zip
+
+      - name: Install Composer dependencies (production)
+        run: composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction --no-progress
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install npm dependencies and build assets
+        run: |
+          npm ci
+          npm run build
+
+      # Without SSH there's no way to run commands on the server, so the two files
+      # below (which normally bootstrap from a sibling folder via __APP_PATH__) get
+      # their real absolute filesystem path baked in here, in CI, instead.
+      - name: Generate public_html entry points
+        run: |
+          mkdir -p stage-public-html
+          cp -r public/. stage-public-html/
+          sed "s|__APP_PATH__|${{ secrets.APP_ABSOLUTE_PATH }}|" deploy/public_html-index.php > stage-public-html/index.php
+          sed -e "s|__APP_PATH__|${{ secrets.APP_ABSOLUTE_PATH }}|" -e "s|__PUBLIC_HTML_PATH__|${{ secrets.PUBLIC_HTML_ABSOLUTE_PATH }}|" deploy/public_html-deploy-hook.php > stage-public-html/deploy-hook.php
+
+      - name: Upload the whole app over FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: ./
+          server-dir: ${{ secrets.FTP_APP_DIR }}
+          # .env, uploaded course images/certificates and runtime cache dirs live only on
+          # the server and must never be overwritten by a deploy. The staging folder is
+          # excluded too — it only needs to go to public_html, not here.
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            **/node_modules/**
+            **/tests/**
+            **/.env
+            **/.env.example
+            stage-public-html/**
+            storage/app/public/**
+            storage/logs/**
+            storage/framework/cache/**
+            storage/framework/sessions/**
+            storage/framework/views/**
+
+      - name: Upload public_html (compiled assets + entry points) over FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: ./stage-public-html/
+          server-dir: ${{ secrets.FTP_PUBLIC_HTML_DIR }}
+
+      - name: Run post-deploy tasks (migrate, cache, queue restart)
+        run: |
+          curl -sf "https://${{ secrets.APP_DOMAIN }}/deploy-hook.php?token=${{ secrets.DEPLOY_HOOK_TOKEN }}"

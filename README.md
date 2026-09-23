@@ -84,18 +84,49 @@ Importante: como la validación se procesa en una **cola**, necesitas un worker 
 
 ## Despliegue
 
-Planeado para **Latinoamérica Hosting**. Pendiente por resolver el día del despliegue:
+Planeado para **Latinoamérica Hosting**, plan compartido con cPanel **sin acceso SSH** (confirmado con soporte — SSH solo viene en planes Empresarial/VPS, y decidimos no subir de plan). Repo privado en GitHub, dominio y SSL ya activos en `https://draandreavargas.art`.
 
-- [ ] **Poner a correr el worker de colas de forma permanente.** Certificados (`GenerateCertificate`) y validación de identidad con IA (`ProcessValidationRequest`) se procesan en cola (`QUEUE_CONNECTION=database`), no al instante — sin un worker corriendo, esos jobs se quedan pendientes para siempre (ver sección de validación de identidad arriba). Localmente esto se resuelve con `php artisan queue:work`, pero en producción necesita quedar corriendo solo, sin que alguien lo deje abierto en una terminal.
-  - Primero hay que revisar qué ofrece el panel de Latinoamérica Hosting:
-    - **Si es hosting tipo VPS con acceso SSH** (proceso persistente posible): configurar `Supervisor` para mantener `php artisan queue:work --tries=3 --max-time=3600` corriendo y reiniciándose solo si se cae.
-    - **Si es hosting compartido tipo cPanel** (sin procesos persistentes, solo Cron Jobs): agregar en cPanel → Cron Jobs una tarea que corra cada minuto:
-      ```
-      * * * * * cd /ruta/a/la/app && php artisan queue:work --stop-when-empty --tries=3 >> /dev/null 2>&1
-      ```
-      Esto procesa lo pendiente cada minuto en vez de dejar un proceso vivo — funciona igual de bien para este volumen de uso.
-  - Verificar que quedó funcionando: completar un curso de prueba y confirmar que el certificado aparece en `/perfil` sin tener que correr nada manualmente (ver cómo se probó esto en desarrollo — completar lecciones, revisar la tabla `jobs`, y que se vacíe sola).
-- [ ] Confirmar que `php artisan storage:link` se ejecutó en el servidor de producción (si no, los PDFs de certificados y las imágenes subidas por el admin no se van a poder descargar/mostrar).
+### CI/CD (GitHub Actions)
+
+Dos workflows en `.github/workflows/`:
+
+- **`ci.yml`** — corre en cada push/PR a `main`: instala dependencias, corre `vendor/bin/pint --test` y `php artisan test`. No necesita ningún secreto, funciona tal cual con el repo en privado (GitHub da 2,000 minutos/mes gratis para repos privados).
+- **`deploy.yml`** — corre en cada push a `main` (o manualmente desde la pestaña Actions). Primero reusa `ci.yml` como gate: si los tests fallan, no despliega. Si pasan:
+  1. Compila todo en el runner de GitHub (`composer install --no-dev`, `npm run build`).
+  2. Genera `index.php` y `deploy-hook.php` para `public_html/` a partir de las plantillas en `deploy/`, insertando las rutas absolutas reales del servidor (todo esto pasa **en GitHub, no en el servidor** — sin SSH no hay forma de ejecutar nada ahí mismo).
+  3. Sube la app completa por FTPS a una carpeta **fuera** de `public_html/` (excluyendo `.env`, `storage/app/public` y cachés de runtime, para no pisar secretos ni contenido subido por usuarios).
+  4. Sube por separado los assets compilados + los dos archivos generados a `public_html/`.
+  5. Llama a `https://draandreavargas.art/deploy-hook.php?token=...` — ese script (protegido con un token largo) es el que sí corre código en el servidor: crea el symlink `public_html/storage` la primera vez (necesario para que las imágenes de cursos y certificados subidos DESPUÉS de cada deploy se sigan viendo), corre `migrate --force`, regenera caché de config/rutas/vistas, y `queue:restart`.
+
+**Por qué la app vive fuera de `public_html/`:** soporte confirmó que el docroot del dominio principal es fijo en `public_html/` — no se puede apuntar directo a la carpeta `public/` de Laravel. La alternativa (subir TODO el código, incluyendo `vendor/` y el `.env`, directamente a `public_html/`) expondría el código fuente y las credenciales de la base de datos a cualquiera que adivine la URL. Por eso el código real va en una carpeta separada, y `public_html/` solo recibe los archivos que de verdad necesitan ser públicos.
+
+**Secretos que hay que configurar en GitHub** (Settings → Secrets and variables → Actions, en el repo):
+
+| Secreto | Valor |
+|---|---|
+| `FTP_SERVER` | Host FTP/SFTP que te da Latinoamérica Hosting |
+| `FTP_USERNAME` | Usuario FTP |
+| `FTP_PASSWORD` | Contraseña FTP |
+| `FTP_APP_DIR` | Carpeta destino para la app completa, **tal como la ve el cliente FTP** (puede ser relativa, ej. `artsmile-app`, si tu FTP arranca en tu home) |
+| `FTP_PUBLIC_HTML_DIR` | Carpeta destino para `public_html/`, tal como la ve el cliente FTP (normalmente `public_html`) |
+| `APP_ABSOLUTE_PATH` | Ruta **absoluta real en el filesystem** a la carpeta de la app, ej. `/home/usuario/artsmile-app` — esto es lo que usa PHP internamente, puede ser un valor distinto a `FTP_APP_DIR` si tu FTP está encerrado ("chroot") en tu home |
+| `PUBLIC_HTML_ABSOLUTE_PATH` | Ruta absoluta real a `public_html/`, ej. `/home/usuario/public_html` |
+| `APP_DOMAIN` | `draandreavargas.art` |
+| `DEPLOY_HOOK_TOKEN` | Token largo — generar con `openssl rand -hex 32` |
+
+`FTP_APP_DIR`/`FTP_PUBLIC_HTML_DIR` vs. `APP_ABSOLUTE_PATH`/`PUBLIC_HTML_ABSOLUTE_PATH` suelen ser el mismo texto escrito distinto (uno relativo, uno absoluto) — pero si el primer deploy da error 500, ese es el sospechoso número uno: confirma la ruta absoluta real por File Manager (la muestra arriba al entrar a una carpeta) o pidiéndosela a soporte.
+
+El mismo `DEPLOY_HOOK_TOKEN` también debe quedar en el `.env` real del servidor — ver `deploy/env.production.example`.
+
+### Pendiente por resolver el día del despliegue
+
+- [x] **Docroot en cPanel: confirmado con soporte que no se puede mover.** Resuelto arriba — la app vive fuera de `public_html/`, y el pipeline arma `public_html/` desde cero en cada deploy sin ningún paso manual.
+- [ ] **Conseguir los valores exactos de `FTP_SERVER`/`FTP_APP_DIR`/`FTP_PUBLIC_HTML_DIR`/rutas absolutas.** cPanel → Archivos → Administrador de Archivos (para ver las rutas reales), y cPanel → Archivos → Cuentas FTP (para el host/usuario/contraseña FTP, o usar directamente las credenciales de la cuenta cPanel si no hay una cuenta FTP separada creada).
+- [ ] **Poner a correr el worker de colas.** Sin SSH no hay Supervisor disponible — usar `deploy/crontab-queue-worker.txt`: cPanel → Avanzado → Cron Jobs (se configura por la interfaz web, no necesita SSH), una tarea cada minuto que procesa lo pendiente y termina sola.
+  - Verificar que quedó funcionando: completar un curso de prueba y confirmar que el certificado aparece en `/perfil` sin correr nada manualmente.
+- [ ] **Crear el `.env` de producción a mano en el servidor** (nunca se sube por el pipeline, ver `.gitignore`). Sin SSH, esto se hace por el Administrador de Archivos de cPanel (crear el archivo `.env` directamente ahí, o subirlo por FTP a la carpeta de `FTP_APP_DIR` una sola vez — el pipeline nunca lo toca después). Usa `deploy/env.production.example` como plantilla, ya con `APP_URL`, correo SMTP y `DEPLOY_HOOK_TOKEN` llenos. Después de crearlo hay que correr `php artisan key:generate` — como tampoco hay SSH para eso, genera la key localmente con `php artisan key:generate --show` y pégala directo en el `.env` del servidor.
+  1. Crear la base de datos en cPanel → **Bases de datos MySQL** (el asistente, no SQL directo). cPanel antepone tu usuario cPanel al nombre de la BD y del usuario (ej. `usuario_artsmile`).
+  2. **Llaves de Bold de producción** siguen pendientes — las que usamos en desarrollo son de prueba/sandbox. Hacen falta las de producción de la cuenta Bold (dashboard → llaves de integración) y configurar ahí el webhook de producción apuntando a `https://draandreavargas.art/webhooks/bold`.
 
 ## Tests
 
