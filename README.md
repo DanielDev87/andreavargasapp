@@ -82,6 +82,21 @@ Importante: como la validación se procesa en una **cola**, necesitas un worker 
 - **Bold**: si no configuras `BOLD_API_KEY`/`BOLD_API_BASE`/`BOLD_WEBHOOK_SECRET`, el sistema usa un flujo simulado local (útil para probar sin credenciales reales) que marca la compra como pagada automáticamente.
 - **Transferencia bancaria**: aprobación manual desde `/admin/purchases`.
 
+## Despliegue
+
+Planeado para **Latinoamérica Hosting**. Pendiente por resolver el día del despliegue:
+
+- [ ] **Poner a correr el worker de colas de forma permanente.** Certificados (`GenerateCertificate`) y validación de identidad con IA (`ProcessValidationRequest`) se procesan en cola (`QUEUE_CONNECTION=database`), no al instante — sin un worker corriendo, esos jobs se quedan pendientes para siempre (ver sección de validación de identidad arriba). Localmente esto se resuelve con `php artisan queue:work`, pero en producción necesita quedar corriendo solo, sin que alguien lo deje abierto en una terminal.
+  - Primero hay que revisar qué ofrece el panel de Latinoamérica Hosting:
+    - **Si es hosting tipo VPS con acceso SSH** (proceso persistente posible): configurar `Supervisor` para mantener `php artisan queue:work --tries=3 --max-time=3600` corriendo y reiniciándose solo si se cae.
+    - **Si es hosting compartido tipo cPanel** (sin procesos persistentes, solo Cron Jobs): agregar en cPanel → Cron Jobs una tarea que corra cada minuto:
+      ```
+      * * * * * cd /ruta/a/la/app && php artisan queue:work --stop-when-empty --tries=3 >> /dev/null 2>&1
+      ```
+      Esto procesa lo pendiente cada minuto en vez de dejar un proceso vivo — funciona igual de bien para este volumen de uso.
+  - Verificar que quedó funcionando: completar un curso de prueba y confirmar que el certificado aparece en `/perfil` sin tener que correr nada manualmente (ver cómo se probó esto en desarrollo — completar lecciones, revisar la tabla `jobs`, y que se vacíe sola).
+- [ ] Confirmar que `php artisan storage:link` se ejecutó en el servidor de producción (si no, los PDFs de certificados y las imágenes subidas por el admin no se van a poder descargar/mostrar).
+
 ## Tests
 
 ```bash
@@ -89,5 +104,3 @@ php artisan test
 ```
 
 Los tests corren sobre SQLite en memoria (ver `phpunit.xml`), no contra el MySQL de desarrollo — así son rápidos y no requieren una base de datos real corriendo.
-
-clave mysql: TuNuevaClave123*

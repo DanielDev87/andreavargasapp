@@ -16,6 +16,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             SetLocale::class,
         ]);
+
+        // Trust the reverse proxy in front of the app (Cloudflare Tunnel locally,
+        // and any CDN/load balancer in production) so Laravel reads the original
+        // client scheme/host from X-Forwarded-* instead of the proxy's own
+        // plain-HTTP connection to this server.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

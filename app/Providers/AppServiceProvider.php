@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Comment;
 use App\Models\Course;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
@@ -35,5 +36,18 @@ class AppServiceProvider extends ServiceProvider
         }
 
         View::share('navCourses', $courses);
+
+        // Pending-comments badge for the admin nav (top-level comments with no admin reply yet)
+        View::composer('layouts.admin', function ($view) {
+            try {
+                $count = Comment::whereNull('parent_id')
+                    ->whereDoesntHave('replies', fn ($q) => $q->whereHas('user', fn ($q2) => $q2->where('is_admin', true)))
+                    ->count();
+            } catch (\Throwable $e) {
+                $count = 0;
+            }
+
+            $view->with('pendingCommentsCount', $count);
+        });
     }
 }

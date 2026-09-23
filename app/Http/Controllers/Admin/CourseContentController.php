@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Comment;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
@@ -15,8 +16,9 @@ class CourseContentController extends Controller
         $this->authorize('admin');
 
         $modules = $course->modules()->with('lessons')->get();
+        $comments = Comment::where('course_id', $course->id)->whereNull('parent_id')->with(['user', 'replies.user'])->oldest()->get();
 
-        return view('admin.courses.content', compact('course', 'modules'));
+        return view('admin.courses.content', compact('course', 'modules', 'comments'));
     }
 
     public function storeModule(Request $request, Course $course)

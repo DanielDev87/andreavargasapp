@@ -92,13 +92,14 @@ class BoldService
      * Verify a Bold webhook signature.
      *
      * Bold signs the request body as: HMAC-SHA256(base64(raw_body), secret_key), hex-encoded,
-     * sent in the `x-bold-signature` header. During Bold's own sandbox/testing mode they sign
-     * with an empty-string secret regardless of what's configured — that's a Bold quirk, not a
-     * bug here.
+     * sent in the `x-bold-signature` header. Per Bold's own docs: "En modo pruebas la firma usa
+     * una clave vacía" — sandbox-mode transactions are always signed with an empty-string
+     * secret, regardless of the real secret key configured. We accept either, since a real
+     * secret will never coincidentally match the empty-string signature.
      */
     public function verifyWebhook(Request $request): bool
     {
-        $secret = config('services.bold.webhook_secret') ?: env('BOLD_WEBHOOK_SECRET');
+        $secret = (string) (config('services.bold.webhook_secret') ?: env('BOLD_WEBHOOK_SECRET'));
 
         // Local simulation path used when no real Bold credentials are configured at all.
         if (empty($this->apiKey)) {
@@ -110,8 +111,14 @@ class BoldService
             return false;
         }
 
-        $computed = hash_hmac('sha256', base64_encode($request->getContent()), (string) $secret);
+        $encodedBody = base64_encode($request->getContent());
 
-        return hash_equals($computed, $signature);
+        foreach ([$secret, ''] as $candidateSecret) {
+            if (hash_equals(hash_hmac('sha256', $encodedBody, $candidateSecret), $signature)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

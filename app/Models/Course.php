@@ -26,6 +26,7 @@ class Course extends Model
         'deposit_amount',
         'duration_hours',
         'level',
+        'is_hidden',
     ];
 
     protected $casts = [
@@ -34,6 +35,7 @@ class Course extends Model
         'deposit_amount' => 'decimal:2',
         'rating' => 'decimal:1',
         'event_date' => 'date',
+        'is_hidden' => 'boolean',
     ];
 
     public function modules()
@@ -75,5 +77,22 @@ class Course extends Model
     public function isSoldOut(): bool
     {
         return $this->isPresencial() && $this->capacity !== null && $this->seatsAvailable() <= 0;
+    }
+
+    /**
+     * A presencial course whose event date has already passed.
+     */
+    public function isPastEvent(): bool
+    {
+        return $this->isPresencial() && $this->event_date !== null && $this->event_date->isPast();
+    }
+
+    /**
+     * Whether the course should appear in public listings/search — false once the
+     * admin manually hides it, or automatically once a presencial event has passed.
+     */
+    public function isPubliclyVisible(): bool
+    {
+        return ! $this->is_hidden && ! $this->isPastEvent();
     }
 }

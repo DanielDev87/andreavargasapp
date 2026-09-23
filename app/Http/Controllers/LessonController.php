@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\GenerateCertificate;
+use App\Models\Comment;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\LessonProgress;
 use App\Models\Module;
 use App\Models\Purchase;
-use App\Services\PlayerTokenService;
 use Illuminate\Http\Request;
 
 class LessonController extends Controller
@@ -52,7 +52,9 @@ class LessonController extends Controller
             return back()->with('warning', 'Debes completar las lecciones anteriores en orden.');
         }
 
-        return view('lessons.show', compact('course', 'lesson'));
+        $comments = Comment::where('course_id', $course->id)->whereNull('parent_id')->with(['user', 'replies.user'])->oldest()->get();
+
+        return view('lessons.show', compact('course', 'lesson', 'comments'));
     }
 
     public function embed(Request $request, Lesson $lesson)
@@ -80,43 +82,15 @@ class LessonController extends Controller
             }
         }
 
-        // Return a signed player URL that redirects to YouTube nocookie (prevents exposing video_id directly)
         if (empty($lesson->video_id)) {
             return response()->json(['message' => 'no video'], 404);
         }
 
-        $service = new PlayerTokenService;
-        $token = $service->generate($lesson->id, $user->id, 300);
-        $playerUrl = route('lessons.player', ['lesson' => $lesson->id, 'token' => $token]);
-
-        return response()->json(['embed_url' => $playerUrl]);
-    }
-
-    public function player(Request $request, Lesson $lesson, string $token)
-    {
-        $user = $request->user();
-
-        // Allow token verification without session if token encodes user, but require matching user for safety
-        $service = new PlayerTokenService;
-
-        // If no user in session, try to extract user id from token payload during verification step
-        if (! $user) {
-            return response('Forbidden', 403);
-        }
-
-        if (! $service->verify($token, $lesson->id, $user->id)) {
-            return response('Forbidden', 403);
-        }
-
-        // All good — redirect to youtube nocookie embed. controls=0 hides YouTube's own
-        // control bar (including the "watch on YouTube" link); the page builds its own
-        // play/pause controls via the IFrame Player API, driven through postMessage rather
-        // than by exposing the raw video ID in our own page source.
-        $url = 'https://www.youtube-nocookie.com/embed/'.$lesson->video_id
-            .'?enablejsapi=1&rel=0&modestbranding=1&controls=0&iv_load_policy=3&disablekb=1&playsinline=1'
-            .'&origin='.urlencode($request->getSchemeAndHttpHost());
-
-        return redirect()->away($url);
+        // The video_id itself is not a meaningful secret — the real access control is the
+        // purchase + sequential-order checks above. The IFrame Player API's postMessage
+        // handshake only works reliably when YT.Player() builds its own iframe from a
+        // videoId (instead of binding to a pre-built iframe), so the client needs this.
+        return response()->json(['video_id' => $lesson->video_id]);
     }
 
     public function complete(Request $request, Lesson $lesson)

@@ -130,4 +130,6 @@
       </form>
     </details>
   </div>
+
+  @include('partials.course-comments', ['course' => $course, 'comments' => $comments])
 @endsection

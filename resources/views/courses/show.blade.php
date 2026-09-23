@@ -10,9 +10,15 @@
     </div>
 
     @if(! $hasPurchase)
-      <a href="{{ route('purchases.create', $course) }}" class="shrink-0 shine-sweep bg-gold-500 text-ink-950 font-bold px-6 py-3 rounded-lg hover:bg-gold-400 transition whitespace-nowrap text-center">
-        {{ __('app.checkout_title') }} — ${{ number_format($course->price, 0, ',', '.') }}
-      </a>
+      @if($course->isSoldOut())
+        <span class="shrink-0 bg-ink-100 dark:bg-ink-800 text-ink-500 dark:text-ink-400 font-bold px-6 py-3 rounded-lg whitespace-nowrap text-center">
+          {{ __('app.courses_sold_out') }}
+        </span>
+      @else
+        <a href="{{ route('purchases.create', $course) }}" class="shrink-0 shine-sweep bg-gold-500 text-ink-950 font-bold px-6 py-3 rounded-lg hover:bg-gold-400 transition whitespace-nowrap text-center">
+          {{ __('app.checkout_title') }} — ${{ number_format($course->price, 0, ',', '.') }}
+        </a>
+      @endif
     @endif
   </div>
 
@@ -64,5 +70,9 @@
 
   @if($modules->isNotEmpty() && ! $hasPurchase)
     <p class="mt-6 text-sm text-ink-500 dark:text-ink-400">{{ __('app.course_locked_notice') }}</p>
+  @endif
+
+  @if($hasPurchase)
+    @include('partials.course-comments', ['course' => $course, 'comments' => $comments])
   @endif
 @endsection

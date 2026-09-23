@@ -68,6 +68,23 @@
               @if(in_array($purchase->status, ['paid', 'completed']))
                 <a href="{{ route('courses.show', $purchase->course) }}" class="block mt-3 text-gold-600 dark:text-gold-400 font-semibold hover:text-gold-500">{{ __('app.profile_continue') }} &rarr;</a>
               @endif
+
+              @if($purchase->status === 'completed' && $purchase->course->isPresencial() && $purchase->attendance_code)
+                <div class="mt-4 pt-4 border-t border-gold-500/10">
+                  <span class="text-xs font-semibold uppercase tracking-wide text-gold-600 dark:text-gold-400">{{ __('app.profile_attendance_title') }}</span>
+                  <p class="text-xs text-ink-500 dark:text-ink-400 mt-0.5">{{ __('app.profile_attendance_subtitle') }}</p>
+                  <div class="mt-3 flex items-center gap-4">
+                    <div id="qr-{{ $purchase->id }}" data-attendance-qr="{{ $purchase->attendance_code }}" class="shrink-0 bg-white p-2 rounded-lg"></div>
+                    <div>
+                      <span class="block text-xs text-ink-500 dark:text-ink-400">{{ __('app.profile_attendance_code_label') }}</span>
+                      <span class="block font-mono text-lg tracking-widest font-bold">{{ $purchase->attendance_code }}</span>
+                      @if($purchase->checked_in_at)
+                        <span class="block mt-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">{{ __('app.profile_attendance_checked_in') }}</span>
+                      @endif
+                    </div>
+                  </div>
+                </div>
+              @endif
             </div>
           @endforeach
         </div>
@@ -112,5 +129,14 @@
 
     <a href="/" class="inline-block mt-10 text-gold-600 dark:text-gold-400 font-semibold hover:text-gold-500">&larr; {{ __('app.admin_view_site') }}</a>
   </main>
+
+  @if($purchases->contains(fn ($p) => $p->status === 'completed' && $p->course->isPresencial() && $p->attendance_code))
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+      document.querySelectorAll('[data-attendance-qr]').forEach(function (el) {
+        new QRCode(el, { text: el.dataset.attendanceQr, width: 96, height: 96, correctLevel: QRCode.CorrectLevel.M });
+      });
+    </script>
+  @endif
 </body>
 </html>

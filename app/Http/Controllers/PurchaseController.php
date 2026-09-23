@@ -23,6 +23,14 @@ class PurchaseController extends Controller
             return redirect()->route('courses.show', $course);
         }
 
+        if (! $course->isPubliclyVisible()) {
+            return redirect()->route('courses.show', $course)->with('warning', 'Este curso ya no está disponible para inscripción.');
+        }
+
+        if ($course->isSoldOut()) {
+            return redirect()->route('courses.show', $course)->with('warning', 'Este curso presencial ya no tiene cupos disponibles.');
+        }
+
         return view('courses.checkout', compact('course'));
     }
 
@@ -36,6 +44,14 @@ class PurchaseController extends Controller
 
         if ($this->alreadyOwns($user, $course)) {
             return redirect()->route('courses.show', $course);
+        }
+
+        if (! $course->isPubliclyVisible()) {
+            return redirect()->route('courses.show', $course)->with('warning', 'Este curso ya no está disponible para inscripción.');
+        }
+
+        if ($course->isSoldOut()) {
+            return redirect()->route('courses.show', $course)->with('warning', 'Este curso presencial ya no tiene cupos disponibles.');
         }
 
         $data = $request->validate([

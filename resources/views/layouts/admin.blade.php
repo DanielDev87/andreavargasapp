@@ -21,14 +21,18 @@
           $adminNav = [
             'admin.dashboard' => __('app.admin_nav_dashboard'),
             'admin.courses.index' => __('app.admin_nav_courses'),
+            'admin.comments.index' => __('app.admin_nav_comments'),
             'admin.validations.index' => __('app.admin_nav_validations'),
             'admin.purchases.index' => __('app.admin_nav_purchases'),
           ];
         @endphp
         @foreach($adminNav as $routeName => $label)
           <a href="{{ route($routeName) }}"
-             class="px-3 py-2 rounded-lg transition {{ request()->routeIs($routeName) || (str_starts_with($routeName, 'admin.courses') && request()->routeIs('admin.courses.*')) ? 'bg-gold-500 text-ink-950' : 'text-ink-600 dark:text-ink-300 hover:text-gold-500' }}">
+             class="relative px-3 py-2 rounded-lg transition {{ request()->routeIs($routeName) || (str_starts_with($routeName, 'admin.courses') && request()->routeIs('admin.courses.*')) ? 'bg-gold-500 text-ink-950' : 'text-ink-600 dark:text-ink-300 hover:text-gold-500' }}">
             {{ $label }}
+            @if($routeName === 'admin.comments.index' && ($pendingCommentsCount ?? 0) > 0)
+              <span class="ml-1 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-red-600 text-white text-xs font-bold">{{ $pendingCommentsCount }}</span>
+            @endif
           </a>
         @endforeach
       </nav>

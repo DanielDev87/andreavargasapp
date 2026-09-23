@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AttendanceController;
 use App\Http\Controllers\Admin\CourseContentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ValidationRequestController as AdminValidationController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BadgeController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\LessonController;
@@ -19,7 +21,7 @@ use App\Models\Course;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    $courses = Course::all();
+    $courses = Course::all()->filter->isPubliclyVisible()->values();
 
     return view('welcome', compact('courses'));
 });
@@ -58,11 +60,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/cursos/{course}/comprar', [PurchaseController::class, 'create'])->name('purchases.create');
     Route::post('/purchases/{course}', [PurchaseController::class, 'initiate'])->name('purchases.initiate');
 
+    // Course comments (student <-> instructor)
+    Route::post('/cursos/{course}/comentarios', [CommentController::class, 'store'])->name('comments.store');
+
     // Lesson viewing and completion
     Route::get('/courses/{course}/modules/{module}/lessons/{lesson}', [LessonController::class, 'show'])->name('lessons.show');
     Route::post('/lessons/{lesson}/complete', [LessonController::class, 'complete'])->name('lessons.complete');
     Route::get('/lessons/{lesson}/embed', [LessonController::class, 'embed'])->name('lessons.embed');
-    Route::get('/lessons/{lesson}/player/{token}', [LessonController::class, 'player'])->name('lessons.player');
 
     // Admin validation review
     Route::prefix('admin')->middleware(['auth', 'can:admin'])->group(function () {
@@ -77,6 +81,12 @@ Route::middleware('auth')->group(function () {
         Route::get('courses/{course}/edit', [App\Http\Controllers\Admin\CourseController::class, 'edit'])->name('admin.courses.edit');
         Route::put('courses/{course}', [App\Http\Controllers\Admin\CourseController::class, 'update'])->name('admin.courses.update');
         Route::delete('courses/{course}', [App\Http\Controllers\Admin\CourseController::class, 'destroy'])->name('admin.courses.destroy');
+        Route::post('courses/{course}/toggle-visibility', [App\Http\Controllers\Admin\CourseController::class, 'toggleVisibility'])->name('admin.courses.toggle-visibility');
+
+        // Attendance (presencial events: check-in codes/QR)
+        Route::get('courses/{course}/attendance', [AttendanceController::class, 'index'])->name('admin.attendance.index');
+        Route::post('courses/{course}/attendance/scan', [AttendanceController::class, 'scan'])->name('admin.attendance.scan');
+        Route::post('courses/{course}/attendance/{purchase}/check-in', [AttendanceController::class, 'checkIn'])->name('admin.attendance.check-in');
 
         // Course content: modules & lessons
         Route::get('courses/{course}/content', [CourseContentController::class, 'index'])->name('admin.courses.content');
@@ -90,6 +100,10 @@ Route::middleware('auth')->group(function () {
         // Purchases (transfers manual approval)
         Route::get('purchases', [App\Http\Controllers\Admin\PurchaseController::class, 'index'])->name('admin.purchases.index');
         Route::post('purchases/{purchase}/approve', [App\Http\Controllers\Admin\PurchaseController::class, 'approve'])->name('admin.purchases.approve');
+
+        // Comments notification panel (student <-> instructor Q&A)
+        Route::get('comments', [App\Http\Controllers\Admin\CommentController::class, 'index'])->name('admin.comments.index');
+        Route::post('comments/{comment}/reply', [App\Http\Controllers\Admin\CommentController::class, 'reply'])->name('admin.comments.reply');
     });
 });
 

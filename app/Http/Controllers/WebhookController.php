@@ -42,7 +42,7 @@ class WebhookController extends Controller
         }
 
         if ($request->input('status') === 'paid') {
-            $this->markPaid($purchase);
+            $purchase->markCompleted();
         }
 
         if ($request->isMethod('get')) {
@@ -63,21 +63,18 @@ class WebhookController extends Controller
             return response()->json(['message' => 'purchase not found'], 404);
         }
 
+        // Idempotency: Bold retries a notification up to 5 times (over 24h) until it gets a 200,
+        // and can also send duplicates for the same transaction. Don't reprocess a purchase
+        // that's already completed — just acknowledge it.
+        if ($purchase->status === 'completed') {
+            return response()->json(['ok' => true]);
+        }
+
         if (data_get($payload, 'type') === 'SALE_APPROVED') {
             $purchase->update(['bold_payment_id' => data_get($payload, 'subject')]);
-            $this->markPaid($purchase);
+            $purchase->markCompleted();
         }
 
         return response()->json(['ok' => true]);
-    }
-
-    /**
-     * Course access unlocks here (status paid/completed). The certificate is only
-     * generated later, once the student finishes every lesson in order — see
-     * LessonController::complete() — never at payment time.
-     */
-    private function markPaid(Purchase $purchase): void
-    {
-        $purchase->update(['status' => 'completed', 'paid_at' => now()]);
     }
 }

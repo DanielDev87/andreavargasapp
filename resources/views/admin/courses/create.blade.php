@@ -5,7 +5,7 @@
 @section('content')
   <h1 class="text-2xl font-bold mb-6">{{ __('app.admin_course_create_title') }}</h1>
 
-  <form method="POST" action="{{ route('admin.courses.store') }}" class="max-w-xl bg-white dark:bg-ink-900 border border-gold-500/15 rounded-xl p-6 shadow-md space-y-5">
+  <form method="POST" action="{{ route('admin.courses.store') }}" enctype="multipart/form-data" class="max-w-xl bg-white dark:bg-ink-900 border border-gold-500/15 rounded-xl p-6 shadow-md space-y-5">
     @csrf
 
     <div>
@@ -45,6 +45,13 @@
       <label class="block text-sm font-semibold text-ink-600 dark:text-ink-300 mb-1">{{ __('app.admin_field_price') }}</label>
       <input name="price" value="{{ old('price') }}" type="number" step="0.01" required
              class="w-full rounded-lg border border-gold-500/20 bg-white dark:bg-ink-950 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gold-500/40">
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-ink-600 dark:text-ink-300 mb-1">{{ __('app.admin_field_image') }}</label>
+      <input name="image" type="file" accept="image/*"
+             class="w-full rounded-lg border border-gold-500/20 bg-white dark:bg-ink-950 px-3 py-2 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-gold-500 file:text-ink-950 file:font-semibold">
+      <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">{{ __('app.admin_field_image_hint') }}</p>
     </div>
 
     {{-- Presencial-only fields --}}
