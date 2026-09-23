@@ -7,7 +7,7 @@ Sitio de marca personal + plataforma de cursos (LMS) para la Dra. Andrea Vargas.
 - PHP 8.3+
 - Composer
 - Node.js + npm
-- SQLite (o el motor que configures en `DB_CONNECTION`)
+- MySQL 8+
 
 ## Instalación
 
@@ -16,11 +16,26 @@ composer install
 npm install
 cp .env.example .env
 php artisan key:generate
-touch database/database.sqlite
+```
+
+Crea la base de datos y un usuario dedicado (no uses `root` directamente):
+
+```sql
+CREATE DATABASE andreavargasapp CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'andreavargasapp'@'localhost' IDENTIFIED BY 'tu-contraseña';
+GRANT ALL PRIVILEGES ON andreavargasapp.* TO 'andreavargasapp'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+Configura `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` y `DB_PASSWORD` en `.env` con esos datos, y luego:
+
+```bash
 php artisan migrate --seed
 php artisan storage:link
 npm run build
 ```
+
+**Toda la persistencia vive en MySQL** — no solo los datos de la app (cursos, usuarios, compras), sino también las sesiones (`SESSION_DRIVER=database`) y la caché (`CACHE_STORE=database`). No se usa SQLite en ningún ambiente que no sea el de tests.
 
 Para desarrollo (servidor + worker de colas + Vite, todo junto):
 
@@ -72,3 +87,7 @@ Importante: como la validación se procesa en una **cola**, necesitas un worker 
 ```bash
 php artisan test
 ```
+
+Los tests corren sobre SQLite en memoria (ver `phpunit.xml`), no contra el MySQL de desarrollo — así son rápidos y no requieren una base de datos real corriendo.
+
+clave mysql: TuNuevaClave123*
