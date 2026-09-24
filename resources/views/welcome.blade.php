@@ -115,8 +115,8 @@
     <div class="bg-ink-950">
       <section class="cover bg-gradient-to-br from-ink-950 via-ink-900 to-black relative px-4 sm:px-8 lg:px-16 xl:px-40 2xl:px-64 overflow-hidden py-48 flex
       items-center min-h-screen">
-        <div class="h-full absolute top-0 left-0 z-0">
-          <img src="/images/cover-bg.jpg" alt="" class="w-full h-full object-cover opacity-20">
+        <div class="w-full h-full absolute top-0 left-0 z-0">
+          <img src="/images/IMG_0685.JPG.jpeg" alt="" class="w-full h-full object-cover object-[center_62%] opacity-20 -scale-x-100">
         </div>
         <div class="absolute inset-0 z-0 bg-[radial-gradient(circle_at_20%_20%,rgba(207,154,46,0.18),transparent_55%)]"></div>
 
