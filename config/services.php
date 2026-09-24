@@ -48,4 +48,10 @@ return [
         'api_key' => env('GEMINI_API_KEY'),
     ],
 
+    // Read via config(), not env(), by public_html/deploy-hook.php — once `config:cache`
+    // has run, env() calls outside config/*.php files return null, since Laravel stops
+    // reading .env entirely at that point. config() values survive because they're
+    // baked into the cached array.
+    'deploy_hook_token' => env('DEPLOY_HOOK_TOKEN'),
+
 ];

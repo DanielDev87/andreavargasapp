@@ -30,7 +30,7 @@ $app->make(Kernel::class)->bootstrap();
 
 header('Content-Type: application/json');
 
-$expectedToken = env('DEPLOY_HOOK_TOKEN');
+$expectedToken = config('services.deploy_hook_token');
 $providedToken = $_GET['token'] ?? '';
 
 if (empty($expectedToken) || ! hash_equals((string) $expectedToken, (string) $providedToken)) {
