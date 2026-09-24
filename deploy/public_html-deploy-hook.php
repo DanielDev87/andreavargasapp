@@ -50,7 +50,18 @@ try {
     // creates it once, first deploy onward.
     $storageLink = $publicHtmlPath.'/storage';
     if (! file_exists($storageLink)) {
-        symlink($appPath.'/storage/app/public', $storageLink);
+        // storage/app/public/** is deliberately excluded from the FTP upload (it's
+        // where user-uploaded content lives, and must never get overwritten by a
+        // deploy) — which also means the folder itself never gets created by the
+        // first deploy, since FTP only creates directories it's actually uploading
+        // files into. symlink() needs a real target to point at, so make sure it
+        // exists first.
+        $storageTarget = $appPath.'/storage/app/public';
+        if (! is_dir($storageTarget)) {
+            mkdir($storageTarget, 0755, true);
+        }
+
+        symlink($storageTarget, $storageLink);
         $steps['storage:link'] = 'created';
     } else {
         $steps['storage:link'] = 'already exists';
