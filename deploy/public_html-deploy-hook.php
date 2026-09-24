@@ -23,6 +23,28 @@ use Illuminate\Support\Facades\Artisan;
 $appPath = '__APP_PATH__';
 $publicHtmlPath = '__PUBLIC_HTML_PATH__';
 
+// storage/app/public/**, storage/framework/{cache,sessions,views}/** and
+// storage/logs/** are all deliberately excluded from the FTP upload — they hold
+// either user-uploaded content or per-deploy runtime state, and must never get
+// overwritten by a deploy. The side effect: none of these folders exist yet after the
+// very first deploy, since FTP only creates directories it's actually uploading files
+// into. This has to run BEFORE Laravel boots below, not after: config/view.php's
+// 'compiled' path is resolved via realpath() once, during boot — creating the folder
+// afterwards wouldn't fix an already-cached-as-false value for this same request.
+// @-suppressed: only errors if a folder already exists, which is fine.
+foreach ([
+    'storage/app/public',
+    'storage/framework/cache/data',
+    'storage/framework/sessions',
+    'storage/framework/views',
+    'storage/logs',
+] as $relative) {
+    $dir = $appPath.'/'.$relative;
+    if (! is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+}
+
 require $appPath.'/vendor/autoload.php';
 
 $app = require_once $appPath.'/bootstrap/app.php';
@@ -49,16 +71,6 @@ try {
     // FTP-copying files only captures a snapshot at deploy time.
     $storageLink = $publicHtmlPath.'/storage';
     $storageTarget = $appPath.'/storage/app/public';
-
-    // storage/app/public/** is deliberately excluded from the FTP upload (it's where
-    // user-uploaded content lives, and must never get overwritten by a deploy) —
-    // which also means the folder itself never gets created by the first deploy,
-    // since FTP only creates directories it's actually uploading files into.
-    // symlink() needs a real target to point at. @-suppressed: only errors if it
-    // already exists, which is exactly the outcome we want either way.
-    if (! is_dir($storageTarget)) {
-        @mkdir($storageTarget, 0755, true);
-    }
 
     // is_link() (unlike file_exists()) still returns true for a symlink whose target
     // doesn't exist yet — without this check, a symlink created before its target
