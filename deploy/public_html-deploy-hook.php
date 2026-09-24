@@ -46,25 +46,28 @@ try {
     // which isn't what's actually served (public_html is, and it's a separate copy —
     // see deploy/public_html-index.php). Without this, anything uploaded AFTER a
     // deploy (course images, generated certificates) would never become visible, since
-    // FTP-copying files only captures a snapshot at deploy time. Idempotent: only
-    // creates it once, first deploy onward.
+    // FTP-copying files only captures a snapshot at deploy time.
     $storageLink = $publicHtmlPath.'/storage';
-    if (! file_exists($storageLink)) {
-        // storage/app/public/** is deliberately excluded from the FTP upload (it's
-        // where user-uploaded content lives, and must never get overwritten by a
-        // deploy) — which also means the folder itself never gets created by the
-        // first deploy, since FTP only creates directories it's actually uploading
-        // files into. symlink() needs a real target to point at, so make sure it
-        // exists first.
-        $storageTarget = $appPath.'/storage/app/public';
-        if (! is_dir($storageTarget)) {
-            mkdir($storageTarget, 0755, true);
-        }
+    $storageTarget = $appPath.'/storage/app/public';
 
+    // storage/app/public/** is deliberately excluded from the FTP upload (it's where
+    // user-uploaded content lives, and must never get overwritten by a deploy) —
+    // which also means the folder itself never gets created by the first deploy,
+    // since FTP only creates directories it's actually uploading files into.
+    // symlink() needs a real target to point at. @-suppressed: only errors if it
+    // already exists, which is exactly the outcome we want either way.
+    if (! is_dir($storageTarget)) {
+        @mkdir($storageTarget, 0755, true);
+    }
+
+    // is_link() (unlike file_exists()) still returns true for a symlink whose target
+    // doesn't exist yet — without this check, a symlink created before its target
+    // existed would look "missing" on every later run and fail on re-creation attempts.
+    if (is_link($storageLink) || file_exists($storageLink)) {
+        $steps['storage:link'] = 'already exists';
+    } else {
         symlink($storageTarget, $storageLink);
         $steps['storage:link'] = 'created';
-    } else {
-        $steps['storage:link'] = 'already exists';
     }
 
     Artisan::call('migrate', ['--force' => true]);
