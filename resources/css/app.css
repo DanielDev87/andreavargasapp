@@ -85,6 +85,106 @@
   .ring-gold {
     box-shadow: 0 0 0 1px rgba(207, 154, 46, 0.35);
   }
+
+  /* Gold glow following the pointer; position is fed by resources/js/animations.js */
+  .spotlight {
+    position: relative;
+    isolation: isolate;
+  }
+  .spotlight::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(420px circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), rgba(207, 154, 46, 0.14), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+  .spotlight:hover::before {
+    opacity: 1;
+  }
+
+  /* Slow breathing ring behind the floating WhatsApp button */
+  .pulse-ring {
+    animation: pulse-ring 2.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  }
+
+  /* Line sliding down the hero's scroll cue */
+  .scroll-cue {
+    transform-origin: top;
+    animation: scroll-cue 2.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  }
+}
+
+/* Landing page: elements start hidden only when JS motion will reveal them (see welcome.blade.php head) */
+.motion-ready [data-hero],
+.motion-ready [data-reveal],
+.motion-ready [data-reveal-stagger] > * {
+  opacity: 0;
+}
+
+html:has(.landing) {
+  scroll-padding-top: 6rem;
+}
+
+.landing :where(a, button, summary):focus-visible {
+  outline: 2px solid var(--color-gold-400);
+  outline-offset: 3px;
+  border-radius: 0.375rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.landing) {
+    scroll-behavior: smooth;
+    interpolate-size: allow-keywords;
+  }
+
+  /* Smooth FAQ open/close where ::details-content is supported */
+  .landing details::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition: block-size 0.4s cubic-bezier(0.16, 1, 0.3, 1), content-visibility 0.4s allow-discrete;
+  }
+  .landing details[open]::details-content {
+    block-size: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .text-shine,
+  .pulse-ring,
+  .scroll-cue {
+    animation: none;
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  80%,
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@keyframes scroll-cue {
+  0% {
+    transform: scaleY(0);
+    opacity: 1;
+  }
+  60% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 0;
+  }
 }
 
 @keyframes shine-sweep {

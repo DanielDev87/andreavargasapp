@@ -1,3 +1,5 @@
+import { initAnimations } from './animations';
+
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
         button.addEventListener('click', () => {
@@ -6,4 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('theme', dark ? 'dark' : 'light');
         });
     });
+
+    initAnimations();
 });

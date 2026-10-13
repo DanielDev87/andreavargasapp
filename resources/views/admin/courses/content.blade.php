@@ -3,12 +3,19 @@
 @section('title', __('app.admin_content_title'))
 
 @section('content')
+  @inject('bunny', 'App\Services\BunnyStreamService')
   <div class="flex items-center justify-between mb-2">
     <div>
       <a href="{{ route('admin.courses.index') }}" class="text-sm text-gold-600 dark:text-gold-400 font-semibold hover:text-gold-500">&larr; {{ __('app.admin_content_back') }}</a>
       <h1 class="text-2xl font-bold mt-1">{{ $course->title }}</h1>
     </div>
   </div>
+
+  @unless($bunnyConfigured)
+    <div class="mt-6 p-4 rounded-lg border border-red-500/30 bg-red-50 dark:bg-red-500/10 text-sm text-red-700 dark:text-red-300">
+      {{ __('app.admin_bunny_not_configured') }}
+    </div>
+  @endunless
 
   <div class="mt-8 space-y-6">
     @forelse($modules as $module)
@@ -47,6 +54,9 @@
                   @if($lesson->is_free)
                     <span class="ml-2 text-xs font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">{{ __('app.admin_lesson_free') }}</span>
                   @endif
+                  @unless($bunny->isValidVideoId($lesson->video_id))
+                    <span class="ml-2 text-xs font-semibold uppercase tracking-wide text-red-600 dark:text-red-400">{{ __('app.admin_lesson_video_legacy') }}</span>
+                  @endunless
                 </span>
                 <span class="text-gold-600 dark:text-gold-400 font-semibold text-sm">{{ __('app.admin_edit') }}</span>
               </summary>
@@ -62,6 +72,14 @@
                          class="w-full rounded-lg border border-gold-500/20 bg-white dark:bg-ink-950 px-3 py-2 text-sm font-mono">
                   <p class="mt-1 text-xs text-ink-500 dark:text-ink-400">{{ __('app.admin_lesson_video_id_hint') }}</p>
                 </div>
+
+                @if($previewUrls->has($lesson->id))
+                  <div>
+                    <button type="button" data-bunny-preview="{{ $previewUrls[$lesson->id] }}"
+                            class="text-sm font-semibold text-gold-600 dark:text-gold-400 hover:text-gold-500">&#9654; {{ __('app.admin_lesson_preview') }}</button>
+                    <div class="relative mt-2 w-full max-w-xl rounded-lg overflow-hidden bg-ink-950" style="padding-top: 56.25%;" hidden></div>
+                  </div>
+                @endif
 
                 <div class="flex flex-wrap items-end gap-3">
                   <div>
@@ -132,4 +150,26 @@
   </div>
 
   @include('partials.course-comments', ['course' => $course, 'comments' => $comments])
+
+  @push('scripts')
+    <script>
+      // The Bunny player loads only on demand, so a long lesson list doesn't open dozens of iframes
+      document.querySelectorAll('[data-bunny-preview]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          const frameWrap = button.nextElementSibling;
+
+          if (! frameWrap.firstElementChild) {
+            const iframe = document.createElement('iframe');
+            iframe.src = button.dataset.bunnyPreview;
+            iframe.allow = 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;';
+            iframe.allowFullscreen = true;
+            iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:none;';
+            frameWrap.appendChild(iframe);
+          }
+
+          frameWrap.hidden = ! frameWrap.hidden;
+        });
+      });
+    </script>
+  @endpush
 @endsection

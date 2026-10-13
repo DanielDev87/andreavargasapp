@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Comment;
 use App\Models\Course;
 use App\Models\User;
+use App\Services\BunnyStreamService;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -16,7 +17,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(BunnyStreamService::class, function () {
+            return new BunnyStreamService(
+                libraryId: (string) config('services.bunny_stream.library_id'),
+                hostname: (string) config('services.bunny_stream.hostname'),
+                tokenKey: config('services.bunny_stream.token_key') ?: null,
+            );
+        });
     }
 
     /**

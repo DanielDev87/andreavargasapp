@@ -22,6 +22,9 @@
         <!-- Never hit the real Bold API from tests, regardless of what's in the developer's .env -->
         <env name="BOLD_API_KEY" value=""/>
         <env name="BOLD_WEBHOOK_SECRET" value=""/>
+        <env name="BUNNY_STREAM_LIBRARY_ID" value=""/>
+        <env name="BUNNY_STREAM_HOSTNAME" value=""/>
+        <env name="BUNNY_STREAM_TOKEN_KEY" value=""/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

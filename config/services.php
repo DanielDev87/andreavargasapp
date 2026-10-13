@@ -54,4 +54,14 @@ return [
     // baked into the cached array.
     'deploy_hook_token' => env('DEPLOY_HOOK_TOKEN'),
 
+    // Bunny Stream — video hosting with CDN-level download prevention.
+    // library_id  : numeric ID of your Stream Library (dash.bunny.net > Stream)
+    // hostname    : CDN pull zone hostname, e.g. vz-abc123.b-cdn.net
+    // token_key   : optional signing secret for URL token auth (recommended in prod)
+    'bunny_stream' => [
+        'library_id' => env('BUNNY_STREAM_LIBRARY_ID'),
+        'hostname' => env('BUNNY_STREAM_HOSTNAME'),
+        'token_key' => env('BUNNY_STREAM_TOKEN_KEY'),
+    ],
+
 ];

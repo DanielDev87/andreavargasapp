@@ -9,7 +9,9 @@ use App\Models\Lesson;
 use App\Models\LessonProgress;
 use App\Models\Module;
 use App\Models\Purchase;
+use App\Services\BunnyStreamService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class LessonController extends Controller
 {
@@ -82,15 +84,25 @@ class LessonController extends Controller
             }
         }
 
-        if (empty($lesson->video_id)) {
+        // The video_id is the Bunny Stream video UUID. Access control (purchase check +
+        // sequential order) already ran above. We generate a short-lived signed embed URL
+        // here so the client never needs raw Bunny credentials.
+        $bunny = app(BunnyStreamService::class);
+
+        if (! $bunny->isConfigured()) {
+            Log::warning('Bunny Stream is not configured: set BUNNY_STREAM_LIBRARY_ID in .env.');
+
+            return response()->json(['message' => 'unavailable'], 503);
+        }
+
+        // Lessons still holding a legacy YouTube ID (or nothing) cannot be played from Bunny
+        if (! $bunny->isValidVideoId($lesson->video_id)) {
             return response()->json(['message' => 'no video'], 404);
         }
 
-        // The video_id itself is not a meaningful secret — the real access control is the
-        // purchase + sequential-order checks above. The IFrame Player API's postMessage
-        // handshake only works reliably when YT.Player() builds its own iframe from a
-        // videoId (instead of binding to a pre-built iframe), so the client needs this.
-        return response()->json(['video_id' => $lesson->video_id]);
+        $embedUrl = $bunny->embedUrl($lesson->video_id);
+
+        return response()->json(['embed_url' => $embedUrl]);
     }
 
     public function complete(Request $request, Lesson $lesson)
