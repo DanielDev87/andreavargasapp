@@ -49,13 +49,14 @@ class BunnyStreamService
      *
      * @param  string  $videoId  Bunny Stream video UUID
      * @param  int  $ttl  Seconds until the token expires (default 4 h)
+     * @param  bool  $autoplay  Start playing as soon as the player loads
      */
-    public function embedUrl(string $videoId, int $ttl = 14400): string
+    public function embedUrl(string $videoId, int $ttl = 14400, bool $autoplay = false): string
     {
         $base = "https://iframe.mediadelivery.net/embed/{$this->libraryId}/{$videoId}";
 
         $params = [
-            'autoplay' => 'false',
+            'autoplay' => $autoplay ? 'true' : 'false',
             'loop' => 'false',
             'muted' => 'false',
             'preload' => 'true',

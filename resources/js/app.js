@@ -1,4 +1,6 @@
 import { initAnimations } from './animations';
+import { initAutoplayCarousels } from './carousels';
+import { initModals } from './modals';
 
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
@@ -10,4 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     initAnimations();
+    initModals();
+    initAutoplayCarousels();
 });

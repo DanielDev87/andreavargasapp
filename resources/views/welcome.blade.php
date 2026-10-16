@@ -33,6 +33,13 @@
   </style>
 </head>
 
+@inject('bunny', 'App\Services\BunnyStreamService')
+@php
+  $introVideoId = config('services.bunny_stream.intro_video_id');
+  $introVideoUrl = $bunny->isConfigured() && $bunny->isValidVideoId($introVideoId)
+      ? $bunny->embedUrl($introVideoId, autoplay: true)
+      : null;
+@endphp
 <body class="landing antialiased bg-white dark:bg-ink-950 font-sans text-ink-900 dark:text-ink-100 transition-colors duration-300">
 
   <div data-scroll-progress aria-hidden="true" class="fixed top-0 inset-x-0 h-0.5 z-[60] origin-left bg-gradient-to-r from-gold-600 via-gold-300 to-gold-600" style="transform: scaleX(0)"></div>
@@ -265,9 +272,19 @@
             </li>
           </ul>
 
-          <a href="#tratamientos" class="shine-sweep inline-block mt-8 px-6 py-3 border border-gold-500 text-gold-400 font-semibold rounded hover:bg-gold-500 hover:text-ink-950 transition">
-            {{ __('app.doctor_cta') }}
-          </a>
+          @if($introVideoUrl)
+            <button type="button" data-modal-open="intro-video-dialog" aria-haspopup="dialog"
+              class="shine-sweep group/play inline-flex items-center gap-3 mt-8 px-6 py-3 border border-gold-500 text-gold-400 font-semibold rounded hover:bg-gold-500 hover:text-ink-950 transition">
+              <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gold-500/15 group-hover/play:bg-ink-950/15 transition" aria-hidden="true">
+                <svg class="w-4 h-4 translate-x-px" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5.14v13.72a1 1 0 001.5.86l11-6.86a1 1 0 000-1.72l-11-6.86A1 1 0 008 5.14z"/></svg>
+              </span>
+              {{ __('app.doctor_cta') }}
+            </button>
+          @else
+            <a href="#tratamientos" class="shine-sweep inline-block mt-8 px-6 py-3 border border-gold-500 text-gold-400 font-semibold rounded hover:bg-gold-500 hover:text-ink-950 transition">
+              {{ __('app.doctor_cta') }}
+            </a>
+          @endif
         </div>
       </div>
     </section>
@@ -277,63 +294,25 @@
     <section class="relative bg-white dark:bg-ink-950 px-4 py-16 sm:px-8 lg:px-16 xl:px-40 2xl:px-64 lg:py-32 transition-colors duration-300" id="tratamientos">
       <h2 data-reveal class="font-serif text-3xl md:text-4xl leading-tight font-bold text-center mb-16 text-balance">{{ __('app.treatments_title') }}</h2>
 
-      <div data-reveal-stagger class="grid gap-8 lg:grid-cols-2">
-        <div class="spotlight bg-white dark:bg-ink-900 rounded-2xl border border-gold-500/20 p-8 shadow-md relative overflow-hidden transition-[translate,box-shadow,border-color] duration-500 hover:-translate-y-1 hover:border-gold-500/45 hover:shadow-2xl hover:shadow-gold-500/10">
+      <div data-reveal-stagger class="max-w-3xl mx-auto">
+        <div class="spotlight bg-white dark:bg-ink-900 rounded-2xl border border-gold-500/20 p-8 md:p-10 shadow-md relative overflow-hidden transition-[translate,box-shadow,border-color] duration-500 hover:-translate-y-1 hover:border-gold-500/45 hover:shadow-2xl hover:shadow-gold-500/10">
           <span class="absolute top-6 right-6 text-xs font-bold uppercase tracking-wide bg-gold-500 text-ink-950 px-3 py-1 rounded-full">{{ __('app.treatment1_badge') }}</span>
           <span class="font-serif text-5xl text-gold-500/30 font-bold">01</span>
           <h3 class="text-2xl font-bold mt-2">{{ __('app.treatment1_title') }}</h3>
           <p class="mt-3 text-ink-600 dark:text-ink-300 leading-relaxed">{{ __('app.treatment1_body') }}</p>
           <div class="flex flex-wrap gap-2 mt-6">
-            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-gold-50 dark:bg-gold-500/10 text-gold-700 dark:text-gold-300">{{ __('app.treatment1_tag1') }}</span>
-            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-gold-50 dark:bg-gold-500/10 text-gold-700 dark:text-gold-300">{{ __('app.treatment1_tag2') }}</span>
-            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-gold-50 dark:bg-gold-500/10 text-gold-700 dark:text-gold-300">{{ __('app.treatment1_tag3') }}</span>
+            @foreach(['treatment1_tag1', 'treatment1_tag2', 'treatment1_tag3'] as $tag)
+              <span class="text-xs font-semibold px-3 py-1 rounded-full bg-gold-50 dark:bg-gold-500/10 text-gold-700 dark:text-gold-300">{{ __('app.'.$tag) }}</span>
+            @endforeach
           </div>
-          <a href="https://wa.me/573115228585?text=Hola,%20quiero%20consultar%20sobre%20Carillas%20en%20Resina."
-            target="_blank" rel="noopener" class="shine-sweep inline-block mt-8 px-6 py-3 bg-ink-950 dark:bg-gold-500 text-gold-400 dark:text-ink-950 font-bold rounded-lg shadow-md">
+          <button type="button" data-modal-open="treatment1-dialog" aria-haspopup="dialog"
+            class="shine-sweep inline-block mt-8 px-6 py-3 bg-ink-950 dark:bg-gold-500 text-gold-400 dark:text-ink-950 font-bold rounded-lg shadow-md">
             {{ __('app.treatment_cta') }}
-          </a>
-        </div>
-
-        <div class="spotlight bg-white dark:bg-ink-900 rounded-2xl border border-gold-500/20 p-8 shadow-md relative overflow-hidden transition-[translate,box-shadow,border-color] duration-500 hover:-translate-y-1 hover:border-gold-500/45 hover:shadow-2xl hover:shadow-gold-500/10">
-          <span class="absolute top-6 right-6 text-xs font-bold uppercase tracking-wide bg-gold-500 text-ink-950 px-3 py-1 rounded-full">{{ __('app.treatment2_badge') }}</span>
-          <span class="font-serif text-5xl text-gold-500/30 font-bold">02</span>
-          <h3 class="text-2xl font-bold mt-2">{{ __('app.treatment2_title') }}</h3>
-          <p class="mt-3 text-ink-600 dark:text-ink-300 leading-relaxed">{{ __('app.treatment2_body') }}</p>
-          <div class="flex flex-wrap gap-2 mt-6">
-            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-gold-50 dark:bg-gold-500/10 text-gold-700 dark:text-gold-300">{{ __('app.treatment2_tag1') }}</span>
-            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-gold-50 dark:bg-gold-500/10 text-gold-700 dark:text-gold-300">{{ __('app.treatment2_tag2') }}</span>
-            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-gold-50 dark:bg-gold-500/10 text-gold-700 dark:text-gold-300">{{ __('app.treatment2_tag3') }}</span>
-          </div>
-          <a href="https://wa.me/573115228585?text=Hola,%20quiero%20consultar%20sobre%20Dise%C3%B1o%20Digital%20de%20Sonrisa%20(DSD)."
-            target="_blank" rel="noopener" class="shine-sweep inline-block mt-8 px-6 py-3 bg-ink-950 dark:bg-gold-500 text-gold-400 dark:text-ink-950 font-bold rounded-lg shadow-md">
-            {{ __('app.treatment_cta') }}
-          </a>
+          </button>
         </div>
       </div>
     </section>
     <!-- end treatments -->
-
-    <!-- start process -->
-    <section class="relative bg-ink-50 dark:bg-ink-900 px-4 py-16 sm:px-8 lg:px-16 xl:px-40 2xl:px-64 lg:py-32 transition-colors duration-300 text-center">
-      <h2 data-reveal class="font-serif text-3xl md:text-4xl leading-tight font-bold text-balance">{{ __('app.process_title') }}</h2>
-      <p data-reveal data-reveal-delay="0.1" class="mt-2 text-ink-600 dark:text-ink-300">{{ __('app.process_subtitle') }}</p>
-
-      <div class="relative mt-16">
-        {{-- Gold line joining the three steps; drawn left to right on scroll --}}
-        <div data-reveal="draw" class="hidden md:block absolute top-7 left-[16.5%] right-[16.5%] h-px origin-left bg-gradient-to-r from-gold-500/20 via-gold-500 to-gold-500/20" aria-hidden="true"></div>
-
-        <div data-reveal-stagger class="relative grid gap-10 md:grid-cols-3">
-          @foreach([1, 2, 3] as $step)
-            <div class="group/step">
-              <span class="relative mx-auto flex items-center justify-center w-14 h-14 rounded-full bg-gold-500 text-ink-950 font-black text-lg mb-5 ring-8 ring-ink-50 dark:ring-ink-900 shadow-gold transition-transform duration-500 group-hover/step:scale-110">0{{ $step }}</span>
-              <h3 class="text-xl font-bold">{{ __('app.process'.$step.'_title') }}</h3>
-              <p class="mt-2 text-ink-600 dark:text-ink-300 leading-relaxed max-w-xs mx-auto">{{ __('app.process'.$step.'_body') }}</p>
-            </div>
-          @endforeach
-        </div>
-      </div>
-    </section>
-    <!-- end process -->
 
     <!-- start pricing -->
     <section class="relative bg-white dark:bg-ink-950 px-4 py-16 sm:px-8 lg:px-16 xl:px-40 2xl:px-64 lg:py-32 transition-colors duration-300 text-center">
@@ -693,7 +672,7 @@
     <section class="relative bg-ink-50 dark:bg-ink-900 px-4 sm:px-8 lg:px-16 xl:px-40 2xl:px-64 py-16 lg:py-32 transition-colors duration-300">
       <h2 data-reveal class="font-serif text-3xl md:text-4xl leading-tight font-bold text-center mb-12 text-balance">{{ __('app.testimonials2_title') }}</h2>
 
-      <div data-reveal-stagger class="flex overflow-x-auto gap-6 pb-8 pt-2 px-4 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] -mx-4 sm:mx-0 sm:[mask-image:linear-gradient(to_right,transparent,black_2rem,black_calc(100%-2rem),transparent)]">
+      <div data-reveal-stagger data-autoplay-carousel="2500" class="flex overflow-x-auto gap-6 pb-8 pt-2 px-4 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] -mx-4 sm:mx-0 sm:[mask-image:linear-gradient(to_right,transparent,black_2rem,black_calc(100%-2rem),transparent)]">
         @foreach([
           ['name' => 'testimonial1_name', 'quote' => 'testimonial1_quote', 'initials' => 'CT'],
           ['name' => 'testimonial2_name', 'quote' => 'testimonial2_quote', 'initials' => 'JM'],
@@ -776,6 +755,69 @@
     <!-- end footer -->
 
   </main>
+
+  {{-- Treatment 01 details: description, prices and a WhatsApp booking link --}}
+  <dialog id="treatment1-dialog" data-modal aria-labelledby="treatment1-dialog-title"
+    class="m-auto w-[min(92vw,640px)] max-w-none max-h-[90dvh] overflow-y-auto rounded-2xl border border-gold-500/30 bg-white dark:bg-ink-900 p-0 text-ink-900 dark:text-ink-100 shadow-2xl shadow-black/50 backdrop:bg-ink-950/80 backdrop:backdrop-blur-sm">
+    <div class="p-6 md:p-8">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <span class="inline-block text-xs font-bold uppercase tracking-wide bg-gold-500 text-ink-950 px-3 py-1 rounded-full">{{ __('app.treatment1_badge') }}</span>
+          <h2 id="treatment1-dialog-title" class="mt-3 font-serif text-2xl md:text-3xl font-bold leading-tight">{{ __('app.treatment1_title') }}</h2>
+        </div>
+        <button type="button" data-modal-close aria-label="{{ __('app.modal_close') }}"
+          class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-gold-500/40 text-gold-600 dark:text-gold-400 hover:bg-gold-500 hover:text-ink-950 transition">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <p class="mt-4 text-ink-600 dark:text-ink-300 leading-relaxed">{{ __('app.treatment1_body') }}</p>
+      <div class="flex flex-wrap gap-2 mt-4">
+        @foreach(['treatment1_tag1', 'treatment1_tag2', 'treatment1_tag3'] as $tag)
+          <span class="text-xs font-semibold px-3 py-1 rounded-full bg-gold-50 dark:bg-gold-500/10 text-gold-700 dark:text-gold-300">{{ __('app.'.$tag) }}</span>
+        @endforeach
+      </div>
+
+      <h3 class="mt-8 text-sm font-bold uppercase tracking-wider text-gold-600 dark:text-gold-400">{{ __('app.treatment_prices_title') }}</h3>
+      {{-- Prices come from the "Inversión Clara" section so both always show the same amounts --}}
+      <dl class="mt-3 divide-y divide-gold-500/15 rounded-xl border border-gold-500/20">
+        @foreach(['pricing_tier1_item2'] as $priceItem)
+          <div class="p-4">
+            <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <dt class="font-semibold">{{ __('app.'.$priceItem.'_name') }}</dt>
+              <dd class="font-bold text-lg text-gold-600 dark:text-gold-400">{{ __('app.'.$priceItem.'_price') }}</dd>
+            </div>
+            <dd class="mt-1 text-sm text-ink-500 dark:text-ink-400">{{ __('app.'.$priceItem.'_body') }}</dd>
+          </div>
+        @endforeach
+      </dl>
+      <p class="mt-3 text-xs text-ink-500 dark:text-ink-400">{{ __('app.treatment_prices_note') }}</p>
+
+      <a href="https://wa.me/573115228585?text={{ rawurlencode(__('app.treatment1_whatsapp_message')) }}" target="_blank" rel="noopener"
+        class="shine-sweep mt-8 flex w-full items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-gold-600 via-gold-400 to-gold-600 text-ink-950 font-bold rounded-full shadow-gold transition duration-300 hover:-translate-y-0.5">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+        {{ __('app.treatment_book_cta') }}
+      </a>
+    </div>
+  </dialog>
+
+  @if($introVideoUrl)
+    {{-- Doctor intro video: the player URL is only assigned when the dialog opens, so it costs nothing until clicked --}}
+    <dialog id="intro-video-dialog" data-modal aria-labelledby="intro-video-title"
+      class="m-auto w-[min(92vw,960px)] max-w-none bg-transparent p-0 text-white backdrop:bg-ink-950/85 backdrop:backdrop-blur-sm open:flex flex-col">
+      <div class="flex items-center justify-between gap-4 pb-3">
+        <h2 id="intro-video-title" class="font-serif text-xl md:text-2xl font-bold">{{ __('app.doctor_video_title') }}</h2>
+        <button type="button" data-modal-close aria-label="{{ __('app.doctor_video_close') }}"
+          class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-gold-500/40 text-gold-400 hover:bg-gold-500 hover:text-ink-950 transition">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="relative w-full aspect-video overflow-hidden rounded-2xl border border-gold-500/30 bg-ink-950 shadow-2xl shadow-black/60">
+        <iframe data-modal-src="{{ $introVideoUrl }}" title="{{ __('app.doctor_video_title') }}" class="absolute inset-0 h-full w-full border-0"
+          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
+      </div>
+    </dialog>
+  @endif
 
   <!-- WhatsApp Floating Button -->
   <a href="https://wa.me/573115228585?text=Hola,%20quisiera%20más%20información." target="_blank" rel="noopener" aria-label="{{ __('app.top_bar_whatsapp') }}" class="fixed bottom-6 right-6 w-16 h-16 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-2xl transition duration-300 hover:-translate-y-1 hover:scale-110 active:scale-95 z-[9999] flex items-center justify-center aspect-square" style="position: fixed; z-index: 9999;">

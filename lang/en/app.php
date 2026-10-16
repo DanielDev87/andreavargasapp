@@ -87,6 +87,8 @@ return [
     'doctor_bullet2' => 'Creator of the "Natural Layering" method',
     'doctor_bullet3' => '+2,500 documented success stories',
     'doctor_cta' => 'Meet Your Doctor',
+    'doctor_video_title' => 'Meet Dr. Andrea Vargas',
+    'doctor_video_close' => 'Close video',
 
     // Treatments
     'treatments_title' => 'Art & Dental Engineering.',
@@ -103,6 +105,11 @@ return [
     'treatment2_tag2' => 'Digital Mockup',
     'treatment2_tag3' => 'Gingivoplasty',
     'treatment_cta' => 'Ask About This Treatment',
+    'treatment_prices_title' => 'Prices',
+    'treatment_prices_note' => 'Reference prices. The final price is set at your consultation, depending on your case.',
+    'treatment_book_cta' => 'Book an Appointment on WhatsApp',
+    'treatment1_whatsapp_message' => 'Hola, quiero agendar una cita de valoración para Carillas en Resina.',
+    'modal_close' => 'Close',
 
     // Process
     'process_title' => 'Your Transformation, Step by Step.',

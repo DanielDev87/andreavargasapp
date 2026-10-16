@@ -68,6 +68,8 @@ return [
         'library_id' => env('BUNNY_STREAM_LIBRARY_ID'),
         'hostname' => env('BUNNY_STREAM_HOSTNAME'),
         'token_key' => env('BUNNY_STREAM_TOKEN_KEY'),
+        // Public intro video of the doctor, opened from "Conoce a tu Doctora" on the home page
+        'intro_video_id' => env('BUNNY_STREAM_INTRO_VIDEO_ID'),
     ],
 
 ];
