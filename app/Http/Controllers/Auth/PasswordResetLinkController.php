@@ -19,8 +19,10 @@ class PasswordResetLinkController extends Controller
 
         $status = Password::sendResetLink($request->only('email'));
 
-        return $status === Password::RESET_LINK_SENT
-            ? back()->with('status', __($status))
+        // An unknown email gets the same answer as a known one, so the form can't be used
+        // to find out who has an account
+        return in_array($status, [Password::RESET_LINK_SENT, Password::INVALID_USER], true)
+            ? back()->with('status', __(Password::RESET_LINK_SENT))
             : back()->withErrors(['email' => __($status)]);
     }
 }

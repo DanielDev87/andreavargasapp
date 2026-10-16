@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Services\AIValidationService;
 use App\Services\BoldService;
 use App\Services\BunnyStreamService;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -54,6 +56,20 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::define('admin', function (User $user) {
             return (bool) ($user->is_admin ?? false);
+        });
+
+        // Password recovery email in the visitor's language, with the brand's wording
+        ResetPassword::toMailUsing(function (User $user, string $token) {
+            $expireMinutes = config('auth.passwords.'.config('auth.defaults.passwords').'.expire');
+
+            return (new MailMessage)
+                ->subject(__('app.reset_email_subject'))
+                ->greeting(__('app.reset_email_greeting', ['name' => $user->name]))
+                ->line(__('app.reset_email_intro'))
+                ->action(__('app.reset_email_action'), route('password.reset', ['token' => $token, 'email' => $user->getEmailForPasswordReset()]))
+                ->line(__('app.reset_email_expire', ['minutes' => $expireMinutes]))
+                ->line(__('app.reset_email_ignore'))
+                ->salutation(__('app.reset_email_salutation'));
         });
 
         // Share a small courses list for the header navigation

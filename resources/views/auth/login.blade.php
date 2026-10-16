@@ -22,6 +22,12 @@
       <h1 class="text-xl font-bold text-center">{{ __('app.login_title') }}</h1>
       <p class="text-sm text-ink-500 dark:text-ink-400 text-center mt-1 mb-6">{{ __('app.login_subtitle') }}</p>
 
+      @if (session('status'))
+        <div class="mb-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 p-3 text-sm text-emerald-700 dark:text-emerald-300" role="status">
+          {{ session('status') }}
+        </div>
+      @endif
+
       @if (session('warning'))
         <div class="mb-4 rounded-lg bg-gold-50 dark:bg-gold-500/10 border border-gold-500/30 p-3 text-sm text-gold-800 dark:text-gold-200">
           {{ session('warning') }}
@@ -42,7 +48,10 @@
             class="w-full rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 px-4 py-3 text-ink-900 dark:text-ink-100 focus:outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500">
         </div>
         <div>
-          <label for="password" class="block text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-ink-400 mb-1">{{ __('app.login_password') }}</label>
+          <div class="flex items-baseline justify-between gap-3 mb-1">
+            <label for="password" class="block text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-ink-400">{{ __('app.login_password') }}</label>
+            <a href="{{ route('password.request') }}" class="text-xs font-semibold text-gold-600 dark:text-gold-400 hover:text-gold-500 transition">{{ __('app.login_forgot_password') }}</a>
+          </div>
           <input id="password" type="password" name="password" required
             class="w-full rounded-lg border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-800 px-4 py-3 text-ink-900 dark:text-ink-100 focus:outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500">
         </div>
