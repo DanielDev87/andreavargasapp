@@ -162,6 +162,8 @@
             const iframe = document.createElement('iframe');
             iframe.src = button.dataset.bunnyPreview;
             iframe.allow = 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;';
+            // Bunny checks the embedding domain (Allowed domains) from the Referer header
+            iframe.referrerPolicy = 'strict-origin-when-cross-origin';
             iframe.allowFullscreen = true;
             iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:none;';
             frameWrap.appendChild(iframe);

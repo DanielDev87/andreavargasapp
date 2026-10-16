@@ -42,6 +42,9 @@ return [
         // and BoldService reads this value as-is without its own fallback chain.
         'base_url' => env('BOLD_API_BASE') ?: 'https://integrations.api.bold.co/online/link/v1',
         'webhook_secret' => env('BOLD_WEBHOOK_SECRET'),
+        // true only with Bold's TEST keys: test-mode webhooks are signed with an empty key,
+        // which anyone could forge, so that signature is accepted only in sandbox mode.
+        'sandbox' => (bool) env('BOLD_SANDBOX', false),
     ],
 
     // Claude reviews the diploma and ID document dentists upload before buying a course.

@@ -30,7 +30,7 @@ class HomeIntroVideoTest extends TestCase
             ->assertOk()
             ->assertSee('data-modal-open="intro-video-dialog"', escape: false)
             ->assertSee('id="intro-video-dialog"', escape: false)
-            ->assertSee('iframe.mediadelivery.net/embed/12345/'.self::VIDEO_ID.'?autoplay=true', escape: false);
+            ->assertSee('player.mediadelivery.net/embed/12345/'.self::VIDEO_ID.'?autoplay=true', escape: false);
     }
 
     public function test_without_an_intro_video_the_button_keeps_scrolling_to_the_treatments(): void

@@ -506,11 +506,9 @@
 
             @if($course->isPresencial())
               <div class="flex items-end justify-between gap-3 border-t border-gold-500/10 pt-5">
-                <div class="text-sm leading-snug">
-                  <span class="block text-ink-400">{{ __('app.courses_total_label') }}: <span class="text-white font-semibold">COP ${{ number_format($course->price, 0, ',', '.') }}</span></span>
-                  @if($course->deposit_amount)
-                    <span class="block text-gold-400 font-bold">{{ __('app.courses_deposit_label') }}: COP ${{ number_format($course->deposit_amount, 0, ',', '.') }}</span>
-                  @endif
+                <div class="leading-snug">
+                  <span class="block text-sm text-ink-400">{{ __('app.courses_investment') }}</span>
+                  <span class="text-2xl font-black text-gold-400">COP ${{ number_format($course->price, 0, ',', '.') }}</span>
                 </div>
                 @if($soldOut)
                   <span class="shrink-0 bg-ink-800 text-ink-400 font-bold uppercase text-sm px-5 py-3 rounded-xl cursor-not-allowed">{{ __('app.courses_sold_out') }}</span>
@@ -813,7 +811,7 @@
         </button>
       </div>
       <div class="relative w-full aspect-video overflow-hidden rounded-2xl border border-gold-500/30 bg-ink-950 shadow-2xl shadow-black/60">
-        <iframe data-modal-src="{{ $introVideoUrl }}" title="{{ __('app.doctor_video_title') }}" class="absolute inset-0 h-full w-full border-0"
+        <iframe data-modal-src="{{ $introVideoUrl }}" referrerpolicy="strict-origin-when-cross-origin" title="{{ __('app.doctor_video_title') }}" class="absolute inset-0 h-full w-full border-0"
           allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
       </div>
     </dialog>

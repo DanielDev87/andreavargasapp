@@ -16,7 +16,7 @@ class BunnyStreamServiceTest extends TestCase
         $url = $bunny->embedUrl(self::VIDEO_ID, ttl: 600);
         parse_str(parse_url($url, PHP_URL_QUERY), $query);
 
-        $this->assertStringStartsWith('https://iframe.mediadelivery.net/embed/12345/'.self::VIDEO_ID.'?', $url);
+        $this->assertStringStartsWith('https://player.mediadelivery.net/embed/12345/'.self::VIDEO_ID.'?', $url);
         $this->assertEqualsWithDelta(time() + 600, (int) $query['expires'], 2);
         $this->assertSame(hash('sha256', 'secret'.self::VIDEO_ID.$query['expires']), $query['token']);
     }
@@ -43,8 +43,8 @@ class BunnyStreamServiceTest extends TestCase
 
         $this->assertSame(self::VIDEO_ID, $bunny->extractVideoId(self::VIDEO_ID));
         $this->assertSame(self::VIDEO_ID, $bunny->extractVideoId('  '.strtoupper(self::VIDEO_ID).' '));
-        $this->assertSame(self::VIDEO_ID, $bunny->extractVideoId('https://iframe.mediadelivery.net/embed/12345/'.self::VIDEO_ID.'?autoplay=true'));
-        $this->assertSame(self::VIDEO_ID, $bunny->extractVideoId('https://iframe.mediadelivery.net/play/12345/'.self::VIDEO_ID));
+        $this->assertSame(self::VIDEO_ID, $bunny->extractVideoId('https://player.mediadelivery.net/embed/12345/'.self::VIDEO_ID.'?autoplay=true'));
+        $this->assertSame(self::VIDEO_ID, $bunny->extractVideoId('https://player.mediadelivery.net/play/12345/'.self::VIDEO_ID));
     }
 
     public function test_youtube_ids_are_not_valid_bunny_video_ids(): void

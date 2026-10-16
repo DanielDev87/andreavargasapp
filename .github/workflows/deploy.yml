@@ -55,7 +55,8 @@ jobs:
           protocol: ftps
           local-dir: ./
           server-dir: ${{ secrets.FTP_APP_DIR }}
-          # .env, uploaded course images/certificates and runtime cache dirs live only on
+          # .env, uploaded course images/certificates, private documents (dentists' diplomas
+          # and IDs) and runtime cache dirs live only on
           # the server and must never be overwritten by a deploy. The staging folder is
           # excluded too — it only needs to go to public_html, not here.
           exclude: |
@@ -68,6 +69,7 @@ jobs:
             **/.env.example
             stage-public-html/**
             storage/app/public/**
+            storage/app/private/**
             storage/logs/**
             storage/framework/cache/**
             storage/framework/sessions/**

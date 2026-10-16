@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
-use Illuminate\Http\Request;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Wraps Bold's "Link de Pagos" API.
+ * Wraps Bold's "Link de Pagos" API and webhook signatures.
  *
  * Docs: https://developers.bold.co/pagos-en-linea/api-link-de-pagos
  *       https://developers.bold.co/pagos-en-linea/llaves-de-integracion
@@ -15,110 +16,127 @@ use Illuminate\Support\Facades\Log;
  */
 class BoldService
 {
-    protected string $apiKey;
+    public function __construct(
+        private readonly string $apiKey,
+        private readonly string $baseUrl,
+        private readonly string $webhookSecret,
+        private readonly bool $sandbox,
+    ) {}
 
-    protected string $baseUrl;
-
-    public function __construct()
+    public function isConfigured(): bool
     {
-        $this->apiKey = config('services.bold.key') ?? '';
-        $this->baseUrl = config('services.bold.base_url');
+        return $this->apiKey !== '';
     }
 
     /**
-     * Create a payment link for the given purchase.
-     * Returns an array with `payment_id` and `payment_url`.
+     * Local development without Bold keys: checkout jumps straight to a fake "paid" webhook.
+     * Never available in production, where it would let anyone mark a purchase as paid.
      */
-    public function createPayment(array $payload): array
+    public function isSimulated(): bool
     {
-        // If no API key configured, keep existing local stub behavior
-        if (empty($this->apiKey)) {
-            return [
-                'payment_id' => 'bold_stub_'.($payload['purchase_id'] ?? uniqid('stub_')),
-                'payment_url' => url('/webhooks/bold?simulate=1&status=paid&purchase_id='.($payload['purchase_id'] ?? '')),
-            ];
-        }
+        return ! $this->isConfigured() && app()->environment('local', 'testing');
+    }
+
+    /**
+     * Create a closed-amount payment link in COP.
+     *
+     * @param  string  $reference  Unique sale reference: letters, digits, "_" and "-", max 60 characters
+     * @param  int  $amount  Whole pesos, no decimals
+     * @param  string|null  $callbackUrl  Where Bold sends the buyer back; Bold rejects non-HTTPS URLs
+     * @return array{payment_link: string, url: string}|null Null when Bold could not create the link
+     */
+    public function createPaymentLink(string $reference, int $amount, string $description, ?string $payerEmail, ?string $callbackUrl): ?array
+    {
+        $body = array_filter([
+            'amount_type' => 'CLOSE',
+            'amount' => [
+                'currency' => 'COP',
+                'total_amount' => $amount,
+                'tip_amount' => 0,
+            ],
+            'reference' => $reference,
+            'description' => $description,
+            'payer_email' => $payerEmail,
+            'callback_url' => $callbackUrl !== null && str_starts_with($callbackUrl, 'https://') ? $callbackUrl : null,
+        ], fn ($value) => $value !== null);
 
         try {
-            $body = array_filter([
-                'amount_type' => 'CLOSE',
-                'amount' => [
-                    'currency' => 'COP',
-                    'total_amount' => (int) round($payload['amount']),
-                    'tip_amount' => 0,
-                ],
-                'reference' => (string) $payload['purchase_id'],
-                'description' => $payload['description'] ?? null,
-                'payer_email' => $payload['customer']['email'] ?? null,
-                // Bold rejects the request outright (403) if callback_url isn't HTTPS, so it's
-                // only sent when we actually have an HTTPS app URL (i.e. not local dev).
-                'callback_url' => $this->httpsCallbackUrl($payload['callback_url'] ?? null),
-            ], fn ($value) => $value !== null);
+            $response = $this->client()->post($this->baseUrl, $body);
+        } catch (ConnectionException $e) {
+            Log::error('Bold payment link request failed', ['reference' => $reference, 'message' => $e->getMessage()]);
 
-            $resp = Http::withHeaders(['Authorization' => 'x-api-key '.$this->apiKey])
-                ->timeout(10)
-                ->post($this->baseUrl, $body);
-
-            if ($resp->successful()) {
-                $data = $resp->json();
-
-                return [
-                    'payment_id' => data_get($data, 'payload.payment_link'),
-                    'payment_url' => data_get($data, 'payload.url'),
-                    'raw' => $data,
-                ];
-            }
-
-            Log::warning('BoldService.createPayment failed', ['status' => $resp->status(), 'body' => $resp->body()]);
-        } catch (\Throwable $e) {
-            Log::error('BoldService.createPayment error: '.$e->getMessage(), ['exception' => $e]);
+            return null;
         }
 
-        // Fallback stub if API call failed
+        $paymentLink = $response->json('payload.payment_link');
+        $url = $response->json('payload.url');
+
+        if (! $response->successful() || ! $paymentLink || ! $url) {
+            Log::warning('Bold rejected the payment link', ['reference' => $reference, 'status' => $response->status(), 'body' => $response->body()]);
+
+            return null;
+        }
+
+        return ['payment_link' => $paymentLink, 'url' => $url];
+    }
+
+    /**
+     * Current state of a payment link, used as a backup when the webhook is late.
+     *
+     * @return array{status: string, total: int|float|null, transaction_id: string|null}|null
+     */
+    public function paymentLinkStatus(string $paymentLink): ?array
+    {
+        try {
+            $response = $this->client()->get(rtrim($this->baseUrl, '/').'/'.rawurlencode($paymentLink));
+        } catch (ConnectionException $e) {
+            Log::warning('Bold payment link status request failed', ['payment_link' => $paymentLink, 'message' => $e->getMessage()]);
+
+            return null;
+        }
+
+        if (! $response->successful() || ! $response->json('status')) {
+            return null;
+        }
+
         return [
-            'payment_id' => 'bold_stub_'.($payload['purchase_id'] ?? uniqid('stub_')),
-            'payment_url' => url('/webhooks/bold?simulate=1&status=paid&purchase_id='.($payload['purchase_id'] ?? '')),
+            'status' => (string) $response->json('status'),
+            'total' => $response->json('total'),
+            'transaction_id' => $response->json('transaction_id'),
         ];
     }
 
-    private function httpsCallbackUrl(?string $preferred): ?string
-    {
-        $url = $preferred ?? route('profile');
-
-        return str_starts_with($url, 'https://') ? $url : null;
-    }
-
     /**
-     * Verify a Bold webhook signature.
-     *
-     * Bold signs the request body as: HMAC-SHA256(base64(raw_body), secret_key), hex-encoded,
-     * sent in the `x-bold-signature` header. Per Bold's own docs: "En modo pruebas la firma usa
-     * una clave vacía" — sandbox-mode transactions are always signed with an empty-string
-     * secret, regardless of the real secret key configured. We accept either, since a real
-     * secret will never coincidentally match the empty-string signature.
+     * Bold signs the webhook as hex HMAC-SHA256 of base64(raw body) with the secret key
+     * (x-bold-signature header). Test-mode events are signed with an empty key, which
+     * anyone could reproduce, so that signature is only accepted in sandbox mode.
      */
-    public function verifyWebhook(Request $request): bool
+    public function verifyWebhookSignature(string $rawBody, string $signature): bool
     {
-        $secret = (string) (config('services.bold.webhook_secret') ?: env('BOLD_WEBHOOK_SECRET'));
-
-        // Local simulation path used when no real Bold credentials are configured at all.
-        if (empty($this->apiKey)) {
-            return $request->boolean('simulate');
-        }
-
-        $signature = $request->header('x-bold-signature', '');
-        if (empty($signature)) {
+        if ($signature === '') {
             return false;
         }
 
-        $encodedBody = base64_encode($request->getContent());
+        $secrets = array_filter(
+            $this->sandbox ? [$this->webhookSecret, ''] : [$this->webhookSecret],
+            fn (string $secret) => $secret !== '' || $this->sandbox,
+        );
 
-        foreach ([$secret, ''] as $candidateSecret) {
-            if (hash_equals(hash_hmac('sha256', $encodedBody, $candidateSecret), $signature)) {
+        $encodedBody = base64_encode($rawBody);
+
+        foreach ($secrets as $secret) {
+            if (hash_equals(hash_hmac('sha256', $encodedBody, $secret), $signature)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private function client(): PendingRequest
+    {
+        return Http::withHeaders(['Authorization' => 'x-api-key '.$this->apiKey])
+            ->acceptJson()
+            ->timeout(15);
     }
 }

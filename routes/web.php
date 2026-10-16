@@ -61,6 +61,7 @@ Route::middleware('auth')->group(function () {
     // Purchases
     Route::get('/cursos/{course}/comprar', [PurchaseController::class, 'create'])->name('purchases.create');
     Route::post('/purchases/{course}', [PurchaseController::class, 'initiate'])->name('purchases.initiate');
+    Route::get('/compras/{purchase}/resultado', [PurchaseController::class, 'result'])->name('purchases.result');
 
     // Course comments (student <-> instructor)
     Route::post('/cursos/{course}/comentarios', [CommentController::class, 'store'])->name('comments.store');

@@ -53,7 +53,7 @@ class BunnyStreamService
      */
     public function embedUrl(string $videoId, int $ttl = 14400, bool $autoplay = false): string
     {
-        $base = "https://iframe.mediadelivery.net/embed/{$this->libraryId}/{$videoId}";
+        $base = "https://player.mediadelivery.net/embed/{$this->libraryId}/{$videoId}";
 
         $params = [
             'autoplay' => $autoplay ? 'true' : 'false',

@@ -100,6 +100,8 @@
           const iframe = document.createElement('iframe');
           iframe.src              = embed_url;
           iframe.allow            = 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;';
+          // Bunny checks the embedding domain (Allowed domains) from the Referer header
+          iframe.referrerPolicy = 'strict-origin-when-cross-origin';
           // Keep the player's own fullscreen off where we can fullscreen the wrapper instead,
           // otherwise the iframe would cover the watermark. iPhones can't fullscreen a
           // wrapper element, so there the native player fullscreen is kept.

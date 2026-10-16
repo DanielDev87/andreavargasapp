@@ -50,7 +50,7 @@ class BunnyLessonVideoTest extends TestCase
         $response = $this->actingAs($user)->getJson(route('lessons.embed', $lesson));
 
         $response->assertOk();
-        $this->assertStringStartsWith('https://iframe.mediadelivery.net/embed/12345/'.self::VIDEO_ID.'?', $response->json('embed_url'));
+        $this->assertStringStartsWith('https://player.mediadelivery.net/embed/12345/'.self::VIDEO_ID.'?', $response->json('embed_url'));
         $this->assertStringContainsString('token=', $response->json('embed_url'));
     }
 
@@ -82,7 +82,7 @@ class BunnyLessonVideoTest extends TestCase
 
         $this->actingAs($admin)->post(route('admin.lessons.store', [$course, $module]), [
             'title' => 'Intro',
-            'video_id' => 'https://iframe.mediadelivery.net/embed/12345/'.strtoupper(self::VIDEO_ID).'?autoplay=true',
+            'video_id' => 'https://player.mediadelivery.net/embed/12345/'.strtoupper(self::VIDEO_ID).'?autoplay=true',
         ])->assertSessionHasNoErrors();
 
         $this->assertSame(self::VIDEO_ID, $module->lessons()->first()->video_id);
