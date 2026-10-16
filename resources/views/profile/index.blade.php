@@ -110,7 +110,7 @@
           @foreach($certificates as $certificate)
             <li class="flex items-center justify-between bg-white dark:bg-ink-900 border border-gold-500/15 rounded-xl p-4 shadow-md">
               <span>{{ $certificate->course->title }}</span>
-              <a href="{{ Storage::disk('public')->url($certificate->certificate_path) }}" target="_blank" class="text-gold-600 dark:text-gold-400 font-semibold hover:text-gold-500">{{ __('app.profile_certificate_download') }} &rarr;</a>
+              <a href="{{ route('certificates.show', $certificate) }}" target="_blank" class="text-gold-600 dark:text-gold-400 font-semibold hover:text-gold-500">{{ __('app.profile_certificate_download') }} &rarr;</a>
             </li>
           @endforeach
         </ul>

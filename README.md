@@ -56,12 +56,7 @@ La navegación pública (`/`) solo muestra enlaces de **"Iniciar Sesión"** y **
 
 ### Cuenta administradora (sembrada en `DatabaseSeeder`)
 
-```
-Email:    andrea@artsmile.co
-Password: artsmile-2026
-```
-
-**Cambia esta contraseña antes de producción** — está en texto plano en el seeder.
+Las credenciales del admin **no se guardan en el repositorio**. Al correr `php artisan db:seed`, el seeder crea el admin con `ADMIN_EMAIL` y `ADMIN_PASSWORD` del `.env`; si `ADMIN_PASSWORD` está vacío, genera una contraseña aleatoria y la muestra una sola vez en la consola. Para cambiarla después, usa "¿Olvidaste tu contraseña?" en `/login`.
 
 ### Cuentas de estudiante
 

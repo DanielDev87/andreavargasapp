@@ -10,8 +10,11 @@ use App\Services\AIValidationService;
 use App\Services\BoldService;
 use App\Services\BunnyStreamService;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -57,6 +60,14 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('admin', function (User $user) {
             return (bool) ($user->is_admin ?? false);
         });
+
+        // Caps that a real visitor never reaches but that stop scripted abuse:
+        // mass sign-ups, reset-email flooding, upload or comment spam, payment-link churn
+        RateLimiter::for('registrations', fn (Request $request) => Limit::perHour(5)->by($request->ip()));
+        RateLimiter::for('password-reset', fn (Request $request) => Limit::perMinutes(15, 5)->by($request->ip()));
+        RateLimiter::for('document-uploads', fn (Request $request) => Limit::perHour(5)->by($request->user()?->id ?: $request->ip()));
+        RateLimiter::for('comments', fn (Request $request) => Limit::perMinute(10)->by($request->user()?->id ?: $request->ip()));
+        RateLimiter::for('checkout', fn (Request $request) => Limit::perMinute(10)->by($request->user()?->id ?: $request->ip()));
 
         // Password recovery email in the visitor's language, with the brand's wording
         ResetPassword::toMailUsing(function (User $user, string $token) {

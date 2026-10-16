@@ -3,5 +3,13 @@
     "All rights reserved.": "Todos los derechos reservados.",
     "Hello!": "¡Hola!",
     "Regards,": "Saludos,",
-    "Whoops!": "¡Ups!"
+    "Whoops!": "¡Ups!",
+    "Too Many Requests": "Demasiadas solicitudes. Espera unos minutos e inténtalo de nuevo.",
+    "Not Found": "Página no encontrada",
+    "Forbidden": "No tienes permiso para ver esta página",
+    "Unauthorized": "No autorizado",
+    "Page Expired": "La página expiró. Recárgala e inténtalo de nuevo.",
+    "Server Error": "Error del servidor",
+    "Service Unavailable": "Servicio no disponible",
+    "Payment Required": "Pago requerido"
 }

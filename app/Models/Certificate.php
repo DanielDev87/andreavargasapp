@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Support\Facades\Storage;
 
 class Certificate extends Model
 {
@@ -21,5 +23,14 @@ class Certificate extends Model
     public function course()
     {
         return $this->belongsTo(Course::class);
+    }
+
+    /**
+     * Certificates live on the private disk and are served by CertificateController;
+     * ones issued before that change may still be on the public disk until moved.
+     */
+    public function fileStorage(): FilesystemAdapter
+    {
+        return Storage::disk('local')->exists($this->certificate_path) ? Storage::disk('local') : Storage::disk('public');
     }
 }

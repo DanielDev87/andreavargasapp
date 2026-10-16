@@ -57,7 +57,7 @@ class GenerateCertificate implements ShouldQueue
             $pdfData = Pdf::loadHTML($html)->setPaper('letter', 'landscape')->output();
 
             $path = 'certificates/certificate_'.$this->purchase->id.'.pdf';
-            Storage::disk('public')->put($path, $pdfData);
+            Storage::disk('local')->put($path, $pdfData);
 
             return $path;
         } catch (\Throwable $e) {
@@ -71,7 +71,7 @@ class GenerateCertificate implements ShouldQueue
     {
         $content = "Certificado de finalización\nNúmero: {$certificateNumber}\nUsuario: {$user->name}\nCurso: {$course->title}\nFecha: ".$issuedAt->toDateString()."\n";
         $path = 'certificates/certificate_'.$this->purchase->id.'.txt';
-        Storage::disk('public')->put($path, $content);
+        Storage::disk('local')->put($path, $content);
 
         return $path;
     }

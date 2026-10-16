@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -16,15 +17,25 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::firstOrCreate(
-            ['email' => 'andrea@artsmile.co'],
-            [
+        // The admin's credentials never live in the repository: they come from ADMIN_EMAIL /
+        // ADMIN_PASSWORD, or a random password is generated and shown once in the console.
+        $adminEmail = env('ADMIN_EMAIL') ?: 'admin@example.com';
+
+        if (! User::where('email', $adminEmail)->exists()) {
+            $password = env('ADMIN_PASSWORD') ?: Str::password(16);
+
+            User::create([
                 'name' => 'Andrea Vargas',
-                'password' => Hash::make('artsmile-2026'),
+                'email' => $adminEmail,
+                'password' => Hash::make($password),
                 'email_verified_at' => now(),
                 'is_admin' => true,
-            ]
-        );
+            ]);
+
+            if (! env('ADMIN_PASSWORD')) {
+                $this->command?->warn("Admin {$adminEmail} creado con la contraseña temporal: {$password}");
+            }
+        }
 
         $this->call(CourseSeeder::class);
     }

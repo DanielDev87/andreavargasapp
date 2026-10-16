@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AddSecurityHeaders;
 use App\Http\Middleware\EndReplacedSession;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             SetLocale::class,
             EndReplacedSession::class,
+            AddSecurityHeaders::class,
         ]);
 
         // Bold posts payment notifications from its servers, without a CSRF token;

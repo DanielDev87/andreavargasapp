@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BadgeController;
+use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\LanguageController;
@@ -36,14 +37,14 @@ Route::middleware('guest')->group(function () {
 
     // Registration
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
-    Route::post('/register', [RegisteredUserController::class, 'store']);
+    Route::post('/register', [RegisteredUserController::class, 'store'])->middleware('throttle:registrations');
 
     // Password reset
     Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
-    Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+    Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])->middleware('throttle:password-reset')->name('password.email');
 
     Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
-    Route::post('/reset-password', [NewPasswordController::class, 'store'])->name('password.update');
+    Route::post('/reset-password', [NewPasswordController::class, 'store'])->middleware('throttle:password-reset')->name('password.update');
 });
 
 Route::middleware('auth')->group(function () {
@@ -53,18 +54,19 @@ Route::middleware('auth')->group(function () {
 
     // Student profile
     Route::get('/perfil', [ProfileController::class, 'index'])->name('profile');
+    Route::get('/certificados/{certificate}', [CertificateController::class, 'show'])->name('certificates.show');
 
     // Validation request
     Route::get('/validacion', [ValidationRequestController::class, 'create'])->name('validation.create');
-    Route::post('/validacion', [ValidationRequestController::class, 'store'])->name('validation.store');
+    Route::post('/validacion', [ValidationRequestController::class, 'store'])->middleware('throttle:document-uploads')->name('validation.store');
 
     // Purchases
     Route::get('/cursos/{course}/comprar', [PurchaseController::class, 'create'])->name('purchases.create');
-    Route::post('/purchases/{course}', [PurchaseController::class, 'initiate'])->name('purchases.initiate');
+    Route::post('/purchases/{course}', [PurchaseController::class, 'initiate'])->middleware('throttle:checkout')->name('purchases.initiate');
     Route::get('/compras/{purchase}/resultado', [PurchaseController::class, 'result'])->name('purchases.result');
 
     // Course comments (student <-> instructor)
-    Route::post('/cursos/{course}/comentarios', [CommentController::class, 'store'])->name('comments.store');
+    Route::post('/cursos/{course}/comentarios', [CommentController::class, 'store'])->middleware('throttle:comments')->name('comments.store');
 
     // Lesson viewing and completion
     Route::get('/courses/{course}/modules/{module}/lessons/{lesson}', [LessonController::class, 'show'])->name('lessons.show');
