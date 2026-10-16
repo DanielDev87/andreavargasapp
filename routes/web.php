@@ -28,6 +28,7 @@ Route::get('/', function () {
 
 Route::get('/cursos/{course}', [CourseController::class, 'show'])->name('courses.show');
 Route::get('/lang/{locale}', [LanguageController::class, 'switch'])->name('lang.switch');
+Route::view('/politica-de-datos', 'legal.data-policy')->name('data-policy');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -47,6 +48,7 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+    Route::get('/session/ping', [AuthenticatedSessionController::class, 'ping'])->name('session.ping');
     Route::get('/admin', [DashboardController::class, 'index'])->name('admin.dashboard')->middleware('can:admin');
 
     // Student profile
@@ -72,6 +74,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('admin')->middleware(['auth', 'can:admin'])->group(function () {
         Route::get('validations', [AdminValidationController::class, 'index'])->name('admin.validations.index');
         Route::get('validations/{validationRequest}', [AdminValidationController::class, 'show'])->name('admin.validations.show');
+        Route::get('validations/{validationRequest}/documents/{type}', [AdminValidationController::class, 'document'])->whereIn('type', ['diploma', 'id'])->name('admin.validations.document');
         Route::post('validations/{validationRequest}/review', [AdminValidationController::class, 'review'])->name('admin.validations.review');
 
         // Course management

@@ -44,9 +44,15 @@ return [
         'webhook_secret' => env('BOLD_WEBHOOK_SECRET'),
     ],
 
-    'gemini' => [
-        'api_key' => env('GEMINI_API_KEY'),
+    // Claude reviews the diploma and ID document dentists upload before buying a course.
+    // validation_model can be raised to claude-sonnet-5-5 if the cheaper model misses cases.
+    'anthropic' => [
+        'api_key' => env('ANTHROPIC_API_KEY'),
+        'validation_model' => env('ANTHROPIC_VALIDATION_MODEL') ?: 'claude-haiku-5-5',
     ],
+
+    // Colombia's public registry of health professionals (ReTHUS), linked from the admin review
+    'rethus_lookup_url' => env('RETHUS_LOOKUP_URL') ?: 'https://web.sispro.gov.co/THS/Cliente/ConsultasPublicas/ConsultaPublicaDeTHxIdentificacion.aspx',
 
     // Read via config(), not env(), by public_html/deploy-hook.php — once `config:cache`
     // has run, env() calls outside config/*.php files return null, since Laravel stops

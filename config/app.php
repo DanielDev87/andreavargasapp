@@ -69,6 +69,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Personal Data Policy (Ley 1581 de 2012)
+    |--------------------------------------------------------------------------
+    |
+    | Who handles data requests, and the version of the policy users accept
+    | when uploading their documents. Bump the version whenever the policy
+    | text changes so each stored consent points to the text that was shown.
+    |
+    */
+
+    'data_protection_email' => env('DATA_PROTECTION_EMAIL') ?: env('MAIL_FROM_ADDRESS'),
+
+    'data_policy_version' => '2026-10-13',
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

@@ -16,13 +16,30 @@
     sequential-order checks AND optionally signs the URL with an expiring token,
     so the raw Bunny credentials are never exposed to the browser.
     Bunny's own player prevents right-click download and has DRM options.
+
+    The student's email floats over the video as a watermark so any screen recording
+    can be traced back to its account. Fullscreen is handled on #player-wrap (not inside
+    the iframe) so the watermark stays visible in fullscreen too.
   --}}
-  <div id="player-wrap" class="relative mt-6 w-full max-w-3xl bg-ink-950 rounded-xl overflow-hidden shadow-lg">
-    <div id="player-frame" class="relative w-full" style="padding-top: 56.25%;">
+  <div id="player-wrap" class="group/player relative mt-6 w-full max-w-3xl bg-ink-950 rounded-xl overflow-hidden shadow-lg [&:fullscreen]:max-w-none [&:fullscreen]:rounded-none [&:fullscreen]:flex [&:fullscreen]:items-center [&:fullscreen]:justify-center">
+    <div id="player-frame" class="relative w-full aspect-video group-[:fullscreen]/player:w-[min(100vw,177.78vh)]">
       <p id="player-status" class="absolute inset-0 flex items-center justify-center text-ink-400 text-sm px-4 text-center">
         {{ __('app.lesson_loading') }}
       </p>
+
+      <div id="player-watermark" aria-hidden="true"
+           class="pointer-events-none select-none absolute z-10 left-[10%] top-[12%] max-w-[80%] truncate text-xs sm:text-sm font-semibold text-white/35 [text-shadow:0_1px_2px_rgba(0,0,0,0.6)] transition-[left,top] duration-[2500ms] ease-in-out">
+        {{ auth()->user()->email }}
+      </div>
     </div>
+  </div>
+
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <button id="fullscreen-btn" type="button" hidden
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gold-500/30 text-sm font-semibold hover:bg-gold-50 dark:hover:bg-ink-900 transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+      {{ __('app.lesson_fullscreen') }}
+    </button>
   </div>
 
   <div class="mt-4">
@@ -76,21 +93,58 @@
           // Remove loading text and inject the Bunny iframe
           statusEl.remove();
 
+          const playerWrap    = document.getElementById('player-wrap');
+          const fullscreenBtn = document.getElementById('fullscreen-btn');
+          const canFullscreenWrapper = document.fullscreenEnabled === true;
+
           const iframe = document.createElement('iframe');
           iframe.src              = embed_url;
           iframe.allow            = 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;';
-          iframe.allowFullscreen  = true;
+          // Keep the player's own fullscreen off where we can fullscreen the wrapper instead,
+          // otherwise the iframe would cover the watermark. iPhones can't fullscreen a
+          // wrapper element, so there the native player fullscreen is kept.
+          iframe.allowFullscreen  = ! canFullscreenWrapper;
           // Bunny Stream already blocks right-click save and external embeds at CDN level
           iframe.style.cssText    = 'position:absolute;top:0;left:0;width:100%;height:100%;border:none;';
 
           // Prevent context menu on the iframe wrapper to discourage right-click tricks
           frameWrap.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-          frameWrap.appendChild(iframe);
+          frameWrap.prepend(iframe);
+
+          if (canFullscreenWrapper) {
+            fullscreenBtn.hidden = false;
+            fullscreenBtn.addEventListener('click', function () {
+              document.fullscreenElement ? document.exitFullscreen() : playerWrap.requestFullscreen();
+            });
+          }
+
+          moveWatermark();
+          setInterval(moveWatermark, 8000);
         } catch (e) {
           statusEl.textContent = "{{ __('app.lesson_forbidden') }}";
         }
       })();
+
+      // Drift the watermark across the video so it can't be cropped or blurred out of a recording
+      function moveWatermark() {
+        const watermark = document.getElementById('player-watermark');
+        watermark.style.left = (5 + Math.random() * 55) + '%';
+        watermark.style.top  = (5 + Math.random() * 80) + '%';
+      }
+
+      // If this account signs in on another device, stop playback here and go to the login page
+      setInterval(async function () {
+        const resp = await fetch("{{ route('session.ping') }}", {
+          headers: { 'Accept': 'application/json' },
+          credentials: 'same-origin',
+        }).catch(() => null);
+
+        if (resp && resp.status === 401) {
+          document.getElementById('player-frame').querySelector('iframe')?.remove();
+          window.location.href = "{{ route('login') }}";
+        }
+      }, 60000);
 
       document.getElementById('complete-btn').addEventListener('click', async function () {
         const btn = this;

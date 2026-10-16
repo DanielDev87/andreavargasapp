@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ValidationRequest;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ValidationRequestController extends Controller
 {
@@ -24,6 +25,18 @@ class ValidationRequestController extends Controller
         return view('admin.validation.show', ['request' => $validationRequest]);
     }
 
+    /**
+     * Streams an uploaded document from private storage; there is no public URL for it.
+     */
+    public function document(ValidationRequest $validationRequest, string $type): StreamedResponse
+    {
+        $this->authorize('admin');
+
+        $path = $type === 'diploma' ? $validationRequest->diploma_path : $validationRequest->id_document_path;
+
+        return $validationRequest->documentStorage($path)->response($path);
+    }
+
     public function review(Request $request, ValidationRequest $validationRequest)
     {
         $this->authorize('admin');
@@ -38,7 +51,7 @@ class ValidationRequestController extends Controller
             ]);
 
             // mark user validated
-            $validationRequest->user->update(['is_validated' => true]);
+            $validationRequest->user->forceFill(['is_validated' => true])->save();
         } else {
             $validationRequest->update([
                 'status' => 'rejected',
@@ -46,7 +59,7 @@ class ValidationRequestController extends Controller
                 'reviewed_at' => now(),
             ]);
 
-            $validationRequest->user->update(['is_validated' => false]);
+            $validationRequest->user->forceFill(['is_validated' => false])->save();
         }
 
         return back()->with('status', 'Revisión guardada.');

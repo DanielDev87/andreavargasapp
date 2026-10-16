@@ -47,7 +47,15 @@
         <p class="mt-2 text-red-600 dark:text-red-400 font-medium">{{ __('app.profile_validation_rejected') }}</p>
         <a href="{{ route('validation.create') }}" class="inline-block mt-4 shine-sweep bg-gold-500 text-ink-950 font-semibold px-5 py-2 rounded-lg hover:bg-gold-400 transition">{{ __('app.profile_validation_cta') }}</a>
       @else
-        <p class="mt-2 text-ink-600 dark:text-ink-300">{{ __('app.profile_validation_pending') }}</p>
+        @php
+          $pendingMessage = match (true) {
+              isset($latestValidation->ai_report['error']) => 'app.profile_validation_pending_ai_unavailable',
+              isset($latestValidation->ai_report['recommendation']) => 'app.profile_validation_pending_after_ai',
+              $latestValidation->review_method === 'manual' => 'app.profile_validation_pending_manual',
+              default => 'app.profile_validation_pending_ai',
+          };
+        @endphp
+        <p class="mt-2 text-ink-600 dark:text-ink-300">{{ __($pendingMessage) }}</p>
       @endif
     </section>
 

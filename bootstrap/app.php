@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EndReplacedSession;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -15,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             SetLocale::class,
+            EndReplacedSession::class,
         ]);
 
         // Trust the reverse proxy in front of the app (Cloudflare Tunnel locally,

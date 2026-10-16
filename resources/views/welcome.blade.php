@@ -771,6 +771,7 @@
       <h3 class="font-serif text-shine font-bold text-2xl">{{ __('app.brand_name') }}</h3>
       <p class="mt-2">{{ __('app.footer_tagline') }}</p>
       <p class="text-sm text-ink-500 mt-8">&copy; {{ now()->year }} {{ __('app.brand_name') }}. {{ __('app.footer_rights') }}</p>
+      <a href="{{ route('data-policy') }}" class="inline-block mt-2 text-sm text-ink-400 hover:text-gold-400 transition">{{ __('app.data_policy_title') }}</a>
     </footer>
     <!-- end footer -->
 

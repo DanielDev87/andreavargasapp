@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use Anthropic\Client;
 use App\Models\Comment;
 use App\Models\Course;
 use App\Models\User;
+use App\Services\AIValidationService;
 use App\Services\BunnyStreamService;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
@@ -22,6 +24,15 @@ class AppServiceProvider extends ServiceProvider
                 libraryId: (string) config('services.bunny_stream.library_id'),
                 hostname: (string) config('services.bunny_stream.hostname'),
                 tokenKey: config('services.bunny_stream.token_key') ?: null,
+            );
+        });
+
+        $this->app->singleton(AIValidationService::class, function () {
+            $apiKey = config('services.anthropic.api_key');
+
+            return new AIValidationService(
+                client: $apiKey ? new Client(apiKey: $apiKey) : null,
+                model: (string) config('services.anthropic.validation_model'),
             );
         });
     }

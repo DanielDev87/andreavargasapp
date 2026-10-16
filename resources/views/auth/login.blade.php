@@ -22,6 +22,12 @@
       <h1 class="text-xl font-bold text-center">{{ __('app.login_title') }}</h1>
       <p class="text-sm text-ink-500 dark:text-ink-400 text-center mt-1 mb-6">{{ __('app.login_subtitle') }}</p>
 
+      @if (session('warning'))
+        <div class="mb-4 rounded-lg bg-gold-50 dark:bg-gold-500/10 border border-gold-500/30 p-3 text-sm text-gold-800 dark:text-gold-200">
+          {{ session('warning') }}
+        </div>
+      @endif
+
       @if ($errors->any())
         <div class="mb-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-sm text-red-700 dark:text-red-300">
           {{ $errors->first() }}
